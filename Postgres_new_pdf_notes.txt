@@ -1,0 +1,3358 @@
+
+
+PostgreSQL is a feature-rich, general-purpose, database-management system. 
+It's a complex piece of software, but every journey begins with the first step. 
+ 
+Introducing PostgreSQL 11 
+PostgreSQL is an advanced SQL database server, available on a wide range of platforms. 
+ 
+Originally developed by the Database Research Group at the University of California, Berkeley, 
+PostgreSQL is now developed and maintained by a huge army of developers and 
+contributors. 
+ 
+PostgreSQL has the following main features: 
+Excellent SQL standards compliance, up to SQL: 2016 
+Client-server architecture 
+It has a highly concurrent design, where readers and writers don't block each other 
+It is highly configurable and extensible for many types of applications 
+It has excellent scalability and performance, with extensive tuning features 
+It offers support for many kinds of data models, such as relational, postrelational 
+(arrays, nested relations via record types), document (JSON and XML), and key/value 
+ 
+ 
+PostgreSQL project focuses on the following objectives: 
+Robust, high-quality software with maintainable, well-commented code 
+Low-maintenance administration for both embedded and enterprise use 
+Standards-compliant SQL, interoperability, and compatibility 
+Performance, security, and high availability 
+ 
+One of the key features of Oracle, since Oracle 7, has been snapshot isolation, where readers don't block writers and writers don't block readers. 
+PostgreSQL was the first database to be designed with this feature, and it offers a complete implementation. 
+ 
+PostgreSQL is highly extensible, so you can add your own data types, operators, index types, and functional languages. 
+ 
+ 
+Who is using PostgreSQL? 
+Prominent users include Apple, BASF, Genentech, Heroku, 
+IMDB, Skype, McAfee, NTT, the UK Met Office, and the US National Weather Service. 
+Early in 2010, PostgreSQL received well in excess of 1,000,000 downloads per year, 
+according to data submitted to the European Commission, which concluded 
+that PostgreSQL is considered by many database users to be a credible alternative. 
+ 
+ 
+Robustness 
+===========
+PostgreSQL is robust, high-quality software, supported by testing for both features and 
+concurrency.  
+ 
+Databases may optionally be created with data block checksums to help diagnose hardware faults. 
+ 
+Security 
+============
+Access to PostgreSQL is controllable via host-based access rules. Authentication is flexible 
+and pluggable, allowing for easy integration with any external security architecture. The 
+latest Salted Challenge Response Authentication Mechanism (SCRAM) provides full 256- 
+bit protection. 
+ 
+PostgreSQL provides role-based access privileges to access data, by command type. 
+PostgreSQL also provides Row-Level Security for privacy, medical, and military-grade 
+security. 
+ 
+Ease of use 
+================
+Clear, full, and accurate documentation exists as a result of a development process where documentation changes are required. => Text data is supported via a single data type that allows the storage of anything from 1 byte 
+to 1 gigabyte. 
+ 
+Extensibility 
+===============
+PostgreSQL is designed to be highly extensible. Database extensions can be easily loaded 
+by using CREATE EXTENSION, which automates version checks, dependencies, and other 
+aspects of configuration. 
+ 
+Scalability 
+=============
+PostgreSQL 11 scales well on a single node up to four CPU sockets. PostgreSQL 
+efficiently runs up to hundreds of active sessions, and up to thousands of connected 
+sessions when using a session pool. 
+ 
+don't have a copy yet, or you don't have the latest version, you can download the 
+source code or binary packages for a wide variety of operating systems from 
+http://www.postgresql.org/download/. 
+ 
+ 
+ 
+PostgreSQL interfaces use the libpq interface library. When using libpq, most 
+of the connection parameter handling is identical, so we can discuss that just once. 
+If you don't specify the preceding parameters, PostgreSQL looks for values set through 
+environment variables, which are as follows: 
+PGHOST or PGHOSTADDR 
+PGPORT (set this to 5432 if it is not set already) 
+PGDATABASE 
+PGUSER 
+PGPASSWORD (this is definitely not recommended) 
+ 
+Connection details can also be specified using a Uniform Resource Identifier (URI) format, 
+as follows: 
+
+psql postgresql://myuser:mypasswd@myhost:5432/mydb 
+ 
+ This specifies that we will connect the psql client application to the PostgreSQL server at 
+the myhost host, on the 5432 port, with the mydb database name, myuser user, and 
+mypasswd password 
+
+SELECT current_database(); 
+
+The following command shows the current_user ID: 
+SELECT current_user; 
+
+The next command shows the IP address and port of the current connection, unless you are 
+using Unix sockets, in which case both values are NULL: 
+
+SELECT inet_server_addr(), inet_server_port(); 
+ 
+ 
+\conninfo. This displays most of the preceding information in a single line: 
+
+postgres=# \conninfo 
+
+You are connected to database postgres, as user postgres, via socket in 
+/var/run/postgresql, at port 5432. 
+ 
+Enabling access for network/remote users 
+ 
+PostgreSQL gives access to clients who connect using Unix sockets, provided 
+that the database user is the same as the system's username. 
+ 
+1. Add or edit this line in your postgresql.conf file: 
+listen_addresses = '*' 
+2. Add the following line as the first line of pg_hba.conf to allow access to all 
+databases for all users with an encrypted password: 
+# TYPE DATABASE USER CIDR-ADDRESS METHOD 
+host all all 0.0.0.0/0 md5 
+ 
+ 
+listen_addresses parameter specifies which IP addresses to listen to. This allows 
+you to flexibly enable and disable listening on interfaces of multiple network cards (NICs) 
+or virtual networks on the same system. 
+ 
+ 
+remote connection that specifies any user or database on 
+any IP address will be asked to authenticate using an MD5-encrypted password 
+ 
+ 
+Type: For this, host means a remote connection. 
+Database: For this, all means for all databases. Other names match exactly, 
+except when prefixed with a plus (+) symbol, in which case we mean a group 
+role rather than a single user. You can also specify a comma-separated list of 
+users, or use the @ symbol to include a file with a list of users. You can even 
+specify sameuser, so that the rule matches when you specify the same name for 
+the user and database. 
+User: For this, all means for all users. Other names match exactly, except when 
+prefixed with a plus (+) symbol, in which case we mean a group role rather than 
+a single user. You can also specify a comma-separated list of users, or use the @ 
+symbol to include a file with a list of users. 
+CIDR-ADDRESS: This consists of two parts: an IP address and a subnet mask. 
+The subnet mask is specified as the number of leading bits of the IP address that 
+make up the mask. Thus, /0 means 0 bits of the IP address, so that all IP 
+addresses will be matched. For example, 192.168.0.0/24 would mean 
+matching of the first 24 bits, so any IP address of the form 192.168.0.x would 
+match. You can also use samenet or samehost. 
+Method: For this, md5 means that PostgreSQL will ask the client to provide a 
+password encrypted with MD5. Another common setting is trust, which 
+effectively means no authentication. Other authentication methods include 
+GSSAPI, SSPI, LDAP, RADIUS, and PAM. PostgreSQL connections can also be 
+made using SSL, in which case client SSL certificates provide authentication. See 
+the Using SSL certificates to authenticate the client recipe in Chapter 6, Security, for 
+more details. 
+ 
+pgAdmin also provides pgAgent, which is a task scheduler. Again, more portable 
+schedulers are available, and you may wish to use those instead. Schedulers aren't covered 
+in this book. 
+ 
+Using the psql query and scripting tool 
+psql is the query tool supplied as a part of the core distribution of PostgreSQL, so it is 
+available in all environments, and works similarly in all of them 
+ 
+psql provides features for use as both an interactive query tool and as a scripting tool. 
+ 
+connection parameters would be either of these options: 
+ 
+        psql -h myhost -p 5432 -d mydb -U myuser 
+        psql postgresql://myuser@myhost:5432/mydb 
+
+        psql -c "SELECT current_time" 
+ 
+-c command is non-interactive. If we want to execute multiple commands, we can 
+write those commands in a text file and then execute them using the -f option. 
+ 
+          $ psql -f examples.sql 
+ 
+psql tool can also be used with both the -c and -f modes together; each one can be 
+used multiple times. 
+ 
+          psql -c "SELECT current_time" –f examples.sql -c "SELECT current_time" 
+ 
+ 
+In psql, you can enter the following two types of commands: 
+psql meta-commands 
+SQL 
+ 
+A meta-command is a command for the psql client, whereas SQL is sent to the database 
+Server. example of a meta-command is \q, which tells the client to disconnect. 
+ 
+ 
+There are two types of help commands, which are as follows: 
+\?: This provides help on psql meta-commands 
+\h: This provides help on specific SQL commands 
+ 
+One-line comments begin with two dashes, as follows: 
+-- This is a single-line comment 
+Multiline comments are similar to those in C and Java: 
+/* 
+* Multiline comment 
+*/ 
+ 
+psql, which are as follows: 
+Information functions 
+Output formatting 
+Execution timing using the \timing command 
+Input/output and editing commands 
+Automatic startup files, such as .psqlrc 
+Substitutable parameters (variables) 
+Access to the OS command line 
+Crosstab views 
+Conditional execution 
+ 
+The password file is located using an environment variable named PGPASSFILE. If 
+PGPASSFILE is not set, a default filename and location must be searched 
+ 
+On *nix systems, look for ~/.pgpass 
+On Windows systems, look for %APPDATA%\postgresql\pgpass.conf, where 
+%APPDATA% is the application data subdirectory in the path (for me, that would 
+be C:\) 
+ 
+File permissions are not enforced on Windows, though the 
+default location is secure. On *nix systems, you must issue the following 
+command: chmod 0600 ~/.pgpass. 
+ 
+ 
+can set up a system-wide file as well as individual per-user files. The default file paths 
+for these files are /etc/pg_service.conf and ~/.pg_service.conf, respectively. 
+ 
+ 
+First, create a file named pg_service.conf with the following content: 
+[dbservice1] 
+host=postgres1 
+port=5432 
+dbname=postgres 
+You can then copy it to either /etc/pg_service.conf or another agreed upon central 
+location. 
+ 
+This feature applies to libpq connections only, so it does not apply to JDBC. 
+ 
+PostgreSQL 9.3 and later versions ship the pg_isready utility, which checks the 
+status of a database server, either local or remote, by establishing a minimal 
+connection 
+ 
+ 
+PostgreSQL 9.3 and later versions ship the pg_isready utility, which checks the 
+status of a database server, either local or remote, by establishing a minimal 
+connection 
+ 
+The server is running and accepting connections. 
+The server is running but not accepting connections (because it is 
+starting up, shutting down, or in recovery). 
+A connection attempt was made, but it failed. 
+No connection attempt was made because of a client problem 
+(invalid parameters, out of memory). 
+Check whether the server is up. If a server is shut down, you 
+cannot connect. The typical problem here is simply mixing up the 
+server to which you are connecting. You need to specify the 
+hostname and port, so it's possible that you are mixing up those 
+details. 
+Check whether the server is up and accepting new connections. A 
+server that is shutting down will not accept new connections, apart 
+from superusers. Also, a standby server may not have the 
+hot_standby parameter enabled, preventing you from 
+connecting. 
+Check whether the server is listening correctly, and check the port 
+to which the server is actually listening. Confirm that the incoming 
+request is arriving on the interface listed in the 
+listen_addresses parameter. Check whether it is set to * for 
+remote connections and localhost for local connections. 
+Check whether the database name and username exist. It's possible 
+that the database or user no longer exists. 
+Check the connection request; that is, check whether the 
+connection request was successful and was somehow dropped 
+following the connection. You can confirm this by looking at the 
+server log when the following parameters are enabled: 
+log_connections = on 
+log_disconnections = on 
+Check for other reasons for disconnection. If you are connecting to 
+a standby server, it is possible that you have been disconnected 
+because of Hot Standby conflicts. 
+ 
+ 
+ 
+What version is the server? 
+
+PostgreSQL has internal version numbers for the data file format, database catalog layout, 
+and crash recovery format. Each of these is checked as the server runs to ensure that the 
+data doesn't become corrupt. 
+ 
+        postgres # SELECT version(); 
+ 
+ You'll get a response that looks something like this: 
+ 
+PostgreSQL 11.2 on x86_64-apple-darwin16.7.0, 
+compiled by Apple LLVM version 9.0.0 (clang-900.0.39.2), 64-bit 
+ 
+        psql –version , cat $PGDATA/PG_VERSION 
+ 
+PostgreSQL server version format is composed of two numbers; the first number indicates the major release, and the second one denotes subsequent maintenance releases for that major release. 
+ 
+ 
+Version 			Last supported date 
+PostgreSQL 9.4		December 2019 
+PostgreSQL 9.5 		January 2021 
+PostgreSQL 9.6		September 2021 
+PostgreSQL 10 		September 2022 
+PostgreSQL 11 		October 2023 
+ 
+ 
+What is the server uptime? 
+ 
+ postgres=# SELECT date_trunc('second', current_timestamp -pg_postmaster_start_time()) as uptime; 
+ 
+ 
+Postgres stores the server start time, so we can access it directly, as follows: 
+ 
+postgres=# SELECT pg_postmaster_start_time(); 
+pg_postmaster_start_time 
+---------------------------------------------- 
+2018-01-01 19:37:41.389134+00 
+ 
+Then, we can write a SQL query to get the uptime, like this: 
+ 
+postgres=# SELECT current_timestamp - pg_postmaster_start_time(); 
+?column? 
+-------------------------------------------------------- 
+2 days 02:50:02.23939 
+ 
+Finally, we can apply some formatting: 
+ 
+postgres=# SELECT date_trunc('second', current_timestamp - pg_postmaster_start_time()) as uptime; 
+ 
+ 
+ 
+Locating the database server files 
+ 
+Database server files are initially stored in a location referred to as the data directory. 
+ 
+ 
+Debian or Ubuntu systems: /var/lib/postgresql/MAJOR_RELEASE/main 
+Red Hat RHEL, CentOS, and Fedora: /var/lib/pgsql/data/ 
+Windows: C:\Program Files\PostgreSQL\MAJOR_RELEASE\data 
+ 
+pg_lsclusters utility is specific to Debian/Ubuntu, and displays a 
+list of all the available database servers, including information, such as the 
+following, for each server: 
+Major release number 
+Port 
+Status (for example, online and down) 
+Data directory 
+Log file 
+ 
+ 
+export PGROOT=/var/lib/pgsql/ 
+export PGRELEASE=10 
+export PGSERVERNAME=mamba 
+export PGDATA=$PGROOT/$PGRELEASE/$PGSERVERNAME 
+In this example, PGDATA is /var/lib/pgsql/10/mamba. 
+ 
+ 
+ 
+pg_createcluster utility from postgresqlcommon, which will select the right initdb utility depending on the major version you specify. 
+ 
+ 
+Locating the database server's message log 
+The database server's message log is a record of all messages recorded by the database server. 
+ 
+The following are the default server log locations: 
+Debian or Ubuntu systems: /var/log/postgresql 
+Red Hat, RHEL, CentOS, and Fedora: /var/lib/pgsql/data/pg_log 
+Windows systems: The messages are sent to the Windows Event Log 
+ 
+The current server log file is named postgresql-MAJOR_RELEASE-SERVER.log, where 
+SERVER is the name of the server (by default, main 
+ 
+postgresql-11-main.log, while older log files are numbered as postgresql-11- 
+main.log.1. The higher the final number, the older the file, since they are being rotated by 
+the logrotate utility 
+ 
+DEBUG 1 to DEBUG 
+5 This comprises the internal diagnostics. DEBUG INFORMATION 
+INFO This is the command output for the user. INFO INFORMATION 
+NOTICE This is helpful information. NOTICE INFORMATION 
+WARNING This warns of likely problems. NOTICE WARNING 
+ERROR This is the current command that is aborted. WARNING ERROR 
+LOG This is useful for sysadmins. INFO INFORMATION 
+FATAL This is the event that disconnects one session 
+only. ERR ERROR 
+PANIC This is the event that crashes the server. CRIT ERROR 
+ 
+ 
+can adjust the number of messages that appear in the log by changing the 
+log_min_messages server parameter. You can also change the amount of information that 
+is displayed for each event by changing the log_error_verbosity parameter 
+ 
+what and the how much that goes into the logs by changing other 
+settings such as log_statements, log_checkpoints, 
+log_connections/log_disconnections, log_verbosity, and log_lock_waits. 
+ 
+ 
+The log_destination parameter controls where the log messages are stored. The valid 
+values are stderr, csvlog, syslog, and eventlog (the latter is only on Windows). 
+ 
+Log rotation can be controlled with settings such as log_rotation_age and 
+log_rotation_size 
+ 
+ 
+Locating the database's system identifier 
+Each database server has a system identifier assigned when the database is initialized 
+(created). The server identifier remains the same if the server is backed up, cloned, and so 
+on. 
+ 
+pg_controldata utility is a PostgreSQL server application that shows the content of a 
+server's control file. The control file is located within the data directory of a server, and it is 
+created at database initialization time 
+ 
+ 
+The template0 and template1 databases are known as template databases. The 
+template1 database can be changed to allow you to create a localized template for any 
+new databases that you create. The template0 database exists so that, when you alter 
+template1, you still have a pristine copy on which to fall back on. 
+ 
+ 
+How many tables are there in a database? 
+ 
+SELECT count(*) FROM information_schema.tables 
+WHERE table_schema NOT IN ('information_schema','pg_catalog'); 
+ 
+psql -c "\d" 
+List of relations 
+Schema | Name | Type | Owner 
+--------+----------+-------+---------- 
+public | accounts | table | postgres 
+public | branches | table | postgres 
+ 
+Number of 
+distinct tables 
+(entities) 
+Complexity rating 
+20,000 This is incredibly complex. You're either counting wrong or you have a big team to 
+manage this. 
+2,000 This is a complex business database. Usually, not many of these are seen. 
+200 This is a typical modern business database. 
+20 This is a simple business database. 
+2 This is a database with a single, clear purpose, strictly designed for performance or 
+some other goal. 
+0 This tells you that you haven't loaded any data yet! 
+ 
+very important to allocate sufficient disk space for your database. If the disk gets full, it will not corrupt the data, but it might lead to database server panic and then consequent shutdown. 
+ 
+For planning or space monitoring, we often need to know how big the database is. 
+ 
+Look at the size of the files that make up the database server. 
+Run a SQL request to confirm the database size.  
+ 
+SELECT pg_database_size(current_database()); 
+ 
+this is limited to only the current database. If you want to know the size of all the 
+databases together, then you'll need a query such as the following: 
+ 
+SELECT sum(pg_database_size(datname)) from pg_database; 
+ 
+The maximum supported table size is 32 TB and it does not require large file support from 
+the operating system. The file system size limits do not impact the large tables, as they are 
+stored in multiple 1 GB files. 
+ 
+the size of a table by using this command: 
+postgres=# select pg_relation_size('pgbench_accounts'); 
+ 
+ 
+We can also see the total size of a table, including indexes and other related spaces, as 
+follows: 
+postgres=# select pg_total_relation_size('pgbench_accounts'); 
+ 
+\dt+ pgbench_accounts 
+ 
+ 
+SELECT pg_size_pretty(pg_relation_size('pgbench_accounts')); 
+ 
+ 
+TOAST stands for The Oversized-Attribute Storage Technique. As the name implies, this 
+is a mechanism used to store long column values. PostgreSQL allows many data types to 
+store values up to 1 GB in size. It transparently stores large data items in many smaller 
+pieces, so the same data type can be used for data ranging from 1 byte to 1 GB. 
+ 
+ 
+basic query will tell us the 10 biggest tables: 
+ 
+    SELECT table_name,pg_relation_size(table_schema || '.' || table_name) as 
+    Size FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY size DESC LIMIT 10; 
+
+PostgreSQL provides a dedicated function, pg_relation_size, to compute the actual disk 
+space used by a specific table or index. We just need to provide the table name. In addition 
+to the main data files, there are other files (called forks) 
+ 
+get a quick estimate of the number of rows in a table using roughly the same calculation that Postgres optimizer uses: 
+
+    SELECT (CASE WHEN reltuples > 0 THEN pg_relation_size(oid)*reltuples/(8192*relpages) 
+    ELSE 0 END)::bigint AS estimated_row_count 
+    FROM pg_class WHERE oid = 'mytable'::regclass; 
+ 
+following function estimates the total number of rows using a mathematical procedure 
+called extrapolation. 
+ 
+CREATE OR REPLACE FUNCTION estimated_row_count(text) 
+RETURNS bigint 
+LANGUAGE sql 
+AS $$ 
+SELECT (CASE WHEN reltuples > 0 THEN 
+pg_relation_size($1)*reltuples/(8192*relpages) 
+ELSE 0 
+END)::bigint 
+FROM pg_class 
+WHERE oid = $1::regclass; 
+$$; 
+ 
+ 
+number of data blocks in the table (relpages) and the number of rows in the table (reltuples). 
+ 
+The Postgres optimizer uses the relpages and reltuples values to calculate the average rows per block, which is also known as the average tuple density. 
+ 
+the average tuple density remains constant over time, then we can 
+calculate the number of rows using this formula: Row estimate = number of data blocks * rows 
+per block. 
+ 
+SELECT reltablespace, relfilenode FROM pg_class WHERE oid = 'mytable'::regclass; 
+ 
+confirm the databaseid in which the table resides: 
+ 
+SELECT oid as databaseid FROM pg_database WHERE datname = current_database(); 
+ 
+ 
+If reltablespace is zero, then the files will be at the following location: 
+$PGDATADIR/base/{databaseid}/{relfilenode}* 
+The bigger the table, the more files you see. If reltablespace is not zero, then the files 
+will be at the following location: 
+$PGDATADIR/pg_tblspc/{reltablespace}/{databaseid}/{relfilenode}* 
+Every file should be 1 GB in size, apart from the last file. 
+ 
+Postgres uses the terms data blocks and pages to refer to the same concept. 
+Postgres also does that with the terms tuple and row. 
+ 
+ 
+ 
+main documents for each PostgreSQL release are available at 
+http://www.postgresql.org/docs/manuals/. 
+ 
+document that covers the following items: 
+Database design—plan your database design. 
+Calculate the initial database sizing. 
+Transaction analysis—how will we access the database? 
+Look at the most frequent access paths (for example, queries). 
+What are the requirements for the response times? 
+Hardware configuration. 
+Initial performance thoughts—will all of the data fit into the available RAM? 
+Choose the operating system and filesystem types. 
+How do we partition the disk? 
+Localization plan. 
+Decide the server encoding, locale, and the time zone. 
+Access and security plan. 
+Identify client systems and specify the required drivers. 
+Create roles according to a plan for access control. 
+Specify pg_hba.conf. 
+Monitoring—are there PostgreSQL plugins for the monitoring solution you are 
+already using (usually yes)? What are the business-specific metrics we need to 
+monitor? 
+Maintenance plan—who will keep it working? How? 
+Availability plan—consider the availability requirements. 
+checkpoint_timeout (for more details on this parameter, see the Understanding 
+and controlling crash recovery recipe in Chapter 11, Backup and Recovery). 
+Plan your backup mechanism and test it. 
+High-availability plan. 
+Decide which form of replication you'll need, if any. 
+ 
+ 
+Changing parameters in your programs 
+ 
+You can change the value of a setting during your session, like this: 
+SET work_mem = '16MB'; 
+ 
+2. This value will then be used for every future transaction. You can also change it only for the duration of the current transaction: 
+ 
+SET LOCAL work_mem = '16MB'; 
+ 
+3. The setting will last until you issue this command: 
+RESET work_mem; 
+4. Alternatively, you can issue the following command: 
+RESET ALL; 
+ 
+the parameters you can change with SET and RESET apply only to the current session. 
+ 
+ 
+change the value of a setting during your transaction as well, like this: 
+SET LOCAL work_mem = '16MB'; 
+This results in the following output: 
+WARNING: SET LOCAL can only be used in transaction blocks 
+SET 
+ 
+In order to understand what the warning means, we can look that setting up in the 
+pg_settings catalog view: 
+postgres=# SELECT name, setting, reset_val, source FROM pg_settings WHERE 
+source = 'session'; 
+name | setting | reset_val | source 
+----------+---------+-----------+--------- 
+work_mem | 4096 | 4096 | session 
+ 
+SET LOCAL command takes effect 
+only for the transaction in which it was executed, which was just the SET LOCAL command in our case. We need to execute it inside a transaction block to be able to see the setting take hold, as follows: 
+BEGIN; 
+SET LOCAL work_mem = '16MB'; 
+ 
+ 
+postgres=# SELECT name, setting, reset_val, source 
+FROM pg_settings WHERE source = 'session'; 
+name | setting | reset_val | source 
+----------+---------+-----------+--------- 
+work_mem | 16384 | 4096 | session 
+ 
+checking parameter  details 
+================================== 
+postgres=# SHOW work_mem; 
+ 
+postgres=# \x 
+Expanded display is on. 
+postgres=# SELECT * FROM pg_settings WHERE name = 'work_mem'; 
+ 
+SHOW config_file; 
+ 
+ 
+we need to check which parameters have been changed, or whether our changes have taken effect correctly. 
+ 
+PostgreSQL also supports the ALTER SYSTEM syntax, Updating the parameter file. From the viewpoint of this recipe, the behavior of this syntax is quite different compared to the other setting-related commands: 
+ 
+postgres=# SELECT name, source, setting FROM pg_settings WHERE source != 'default' 
+AND source != 'override' ORDER by 2, 1; 
+ 
+From pg_settings, you can see which parameters have non-default values, and what the 
+source of the current value is. The SHOW command doesn't tell you whether a parameter is 
+set at a non-default value. 
+ 
+ 
+The setting column of pg_settings shows the current value, but you can also look at the boot_val and reset_val parameters. The boot_val parameter shows the value that was assigned when the PostgreSQL database cluster was initialized (initdb), while reset_val shows the value that the parameter will return to if you issue the RESET command. 
+ 
+max_stack_depth parameter is an exception, because pg_settings says it is set by 
+the environment variable, though it is actually set by ulimit -s on Linux and Unix 
+systems. The max_stack_depth parameter just needs to be set directly on Windows. 
+ 
+Some of the parameters take effect only when the server is first started Example might be shared_buffers, which defines the size of the shared memory cache. Many of 
+the parameters can be changed while the server is still running. 
+ 
+ 
+After changing the required parameters, we issue a reload command to the server, forcing 
+PostgreSQL to re-read the postgresql.conf file (and all other configuration files). There 
+are a number of ways to do that, depending on your distribution and OS. 
+ 
+pg_ctl reload 
+This assumes the default data directory; otherwise, you have to specify the correct data 
+directory with the -D option. 
+ 
+pg_ctlcluster 11 main reload 
+On modern distributions, you should use systemd, as follows: 
+sudo systemctl reload postgresql@11-main 
+ 
+ 
+Some other parameters require a restart of the server for changes to take effect—for 
+instance, max_connections, listen_addresses, and so on. The syntax is very similar to 
+a reload operation, as shown here: 
+ 
+pg_ctl restart 
+ 
+A longstanding and good practice is to version-control configuration files by using Git 
+alongside any other code or configuration changes. An even better alternative is to use 
+configuration management software such as Ansible, Chef, or Puppet, rather than editing 
+configuration files directly. 
+ 
+ 
+The postgresql.conf file also supports an include directive. This allows the postgresql.conf file to reference other files, which can then reference other files, and so on. 
+ 
+ALTER SYSTEM SET shared_buffers = '1GB'; 
+ 
+This command will not actually edit postgresql.conf. Instead, it writes the new setting 
+to another file named postgresql.auto.conf. 
+ 
+TIPS: PostgreSQL 11 now supports up to 7 TB of cache, if you have that much memory. 
+ 
+ 
+Setting parameters for particular groups of users 
+ 
+PostgreSQL supports a variety of ways of defining parameter settings for various user groups. This is very convenient, especially for managing user groups that have different requirements. 
+ 
+ 
+1. For all users in the saas database, use the following commands: 
+ 
+ALTER DATABASE saas SET configuration_parameter = value1; 
+ 
+2. For a user named simon connected to any database, use the following commands: 
+ 
+ALTER ROLE simon SET configuration_parameter = value2; 
+ 
+ 
+Alternatively, you can set a parameter for a user only when they're connected to 
+a specific database, as follows: 
+ALTER ROLE simon IN DATABASE saas SET configuration_parameter = value3; 
+ 
+Database 
+User (also called role by postgreSQL) 
+Database and user combination 
+Each of the parameter defaults is overridden by the one following it. 
+In the preceding three SQL statements, the following apply: 
+If gianni connects to the saas database, then value1 will apply 
+If simon connects to a database other than saas, then value2 will apply 
+If simon connects to the saas database, then value3 will apply 
+ 
+ 
+The size of the physical RAM that will be dedicated to PostgreSQL 
+The types of applications for which we will use PostgreSQL 
+ 
+If your database is larger than 32 MB, then you'll probably benefit from increasing shared_buffers. You can increase this to a much larger value, but remember that running out of memory induces many problems. 
+ 
+For instance, if the memory is swapped to disk, then 
+PostgreSQL will inefficiently treat all data as if it were the RAM. Another unfortunate 
+circumstance is when the Linux Out-Of-Memory (OOM) killer terminates one of the 
+various processes spawned by the PostgreSQL server. So, it's better to be conservative. It is 
+good practice to set a low value in your postgresql.conf and increment slowly to ensure 
+that you get the benefits from each change. 
+If you increase shared_buffers and you're running on a non-Windows server, you will 
+almost certainly need to increase the value of the SHMMAX OS parameter (and on some 
+platforms, other parameters as well). 
+ 
+ 
+For Linux, use kernel.shmmax=value 
+For macOS, use kern.sysv.shmmax=value 
+For FreeBSD, use kern.ipc.shmmax=value 
+ 
+ 
+If there is heavy write activity, you may want to set wal_buffers to a much higher value than the default. In fact, wal_buffers is automatically set from the value of shared_buffers, following a rule that fits most cases. 
+ 
+doing heavy write activity and/or large data loads, you may want to set max_wal_size and min_wal_size higher than the default to avoid wasting I/O in excessively frequent checkpoints 
+ 
+Ensure that autovacuum is turned on, unless you have a very good reason to turn it off; most people don't. 
+ 
+Contrib: The PostgreSQL core includes many functions. There is also an official section for add-in modules, known as contrib modules. They are always available for your database server, but are not automatically enabled in every database, because not all users might need them. 
+ 
+PGXN: This is the PostgreSQL Extension Network, a central distribution system dedicated to sharing PostgreSQL extensions. 
+ 
+Separate projects: These are large external projects, such as PostGIS, offering extensive and complex PostgreSQL modules. 
+ 
+ 
+Installing modules from PGXN 
+The PostgreSQL Extension Network, PGXN for short, is a website (http://pgxn.org) that was launched in late 2010 with the purpose of providing a central distribution system for 
+open source PostgreSQL extension libraries 
+ 
+ 
+Building the libraries (only for modules that have libraries) 
+Installing the module files in the appropriate locations 
+ 
+make install 
+ 
+Modules such as auto_explain do not provide any additional user-defined functions, so they won't be auto-loaded; that needs to be done manually by a superuser with a LOAD statement. 
+ 
+Adding an external module to PostgreSQL, specially packaged modules are called extensions in PostgreSQL. They can be managed with dedicated SQL commands. 
+ 
+ 
+When you issue a CREATE EXTENSION command, the database server looks for a file named EXTNAME.control in the SHAREDIR/extension directory. That file tells PostgreSQL some properties of the extension, including a description, some installation information, and the default version number of the extension (which is unrelated to the PostgreSQL version number). 
+ 
+postgres=# \x on 
+Expanded display is on. 
+postgres=# SELECT * FROM pg_available_extensions ORDER BY name; 
+ 
+postgres=# \dx+ dblink 
+Objects in extension "dblink" 
+Object Description 
+------------------------------------------------------------------- 
+-- 
+function dblink_build_sql_delete(text,int2vector,integer,text[]) 
+function 
+dblink_build_sql_insert(text,int2vector,integer,text[],text[]) 
+function 
+dblink_build_sql_update(text,int2vector,integer,text[],text[]) 
+function dblink_cancel_query(text) 
+function dblink_close(text) 
+function dblink_close(text,boolean) 
+function dblink_close(text,text) 
+(...) 
+ 
+ 
+4. Extensions might have dependencies, too. The cube and earthdistance 
+contrib extensions are a good example, since the latter depends on the former: 
+ 
+postgres=# CREATE EXTENSION earthdistance; 
+ERROR: required extension "cube" is not installed 
+HINT: Use CREATE EXTENSION ... CASCADE to install required 
+extensions too. 
+postgres=# CREATE EXTENSION earthdistance CASCADE; 
+NOTICE: installing required extension "cube" 
+CREATE EXTENSION 
+ 
+Note how the CASCADE keyword was used to automatically create all the other 
+extensions that the extension being created depends on, as clearly reminded by 
+the HINT message. 
+ 
+pg_available_extensions system view shows one row for each extension control 
+file in the SHAREDIR/extension directory (see the Using an installed module recipe). The 
+pg_extension catalog table records only the extensions that have actually been created. 
+ 
+\dx meta-command to examine the extensions. It supports an optional plus sign (+) to control verbosity, and an optional pattern for the extension name to restrict its range. 
+ 
+system view, pg_available_extension_versions, shows all the versions that are available for each extension 
+ 
+ 
+PostgreSQL consists of a set of server processes, the group leader of which is named the 
+postmaster. Starting the server is the act of creating these processes, and stopping the 
+server is the act of terminating those processes. 
+ 
+When we start a database server, we refer to a data directory, which contains the heart and 
+soul—or at least the data—of our database. Subsidiary tablespaces may contain some data 
+outside the main data directory, so the data directory is just the main central location, and 
+not the only place where data for that database server is held. 
+ 
+ 
+Starting the database server manually 
+ 
+First, you need to understand the difference between the service and the server. The word 
+server refers to the database server and its processes. The word service refers to the operating 
+system wrapper by which the server gets called. 
+ 
+With systemd, a PostgreSQL server process is represented by a service unit, which is 
+managed via the systemctl command. 
+ 
+		sudo systemctl start SERVICEUNIT 
+ 
+There are a couple of things to keep in mind: 
+This will work only if the user executing the command has been previously 
+granted appropriate sudo privileges by the system administrator. 
+If the command is executed from a superuser account, then the sudo keyword is 
+unnecessary, although not harmful. 
+ 
+On Ubuntu and Debian, there is a service unit called this: 
+postgresql@RELEASE-CLUSTERNAME 
+For each database server instance, there is another service unit called 
+just postgresql, and that can be used to manage all the database servers at 
+once. Therefore, you can issue the following command: 
+sudo systemctl start postgresql 
+To start all the available instances, and to start only the default version 11 
+instance, use the following: 
+sudo systemctl start postgresql@11-main 
+Default Red Hat/Fedora packages call the service unit simply postgresql, so 
+the syntax is as follows: 
+sudo systemctl start postgresql 
+Red Hat/Fedora packages from the PostgreSQL Yum repository create a service 
+unit called postgresql--RELEASE, so we can start version 11 as follows: 
+sudo systemctl start postgresql-11 
+ 
+The following commands can be used where systemd is not available. 
+On Debian and Ubuntu releases, you must invoke the PostgreSQL-specific utility 
+pg_ctlcluster, as follows: 
+pg_ctlcluster 11 main start 
+ 
+For Red Hat/Fedora, you can use this command: 
+service postgresql start 
+For Windows, the command is as follows: 
+net start postgres 
+For Red Hat/Fedora, you can also use the following command: 
+pg_ctl -D $PGDATA start 
+Here PGDATA is set to the data directory path. 
+ 
+pg_ctlcluster wrapper is a convenient utility that allows multiple servers to coexist more easily, which is especially good when you have servers with different versions. 
+  
+ This capability is very useful and is transposed on systemd, as shown in the examples using @ in the name of the service unit, where @ denotes the usage of a service file template. 
+ 
+ 
+systemd feature is the capability to enable/ disable a service unit to specify whether it will be started automatically on the next boot, with a syntax such as the following: 
+ 
+sudo systemctl enable postgresql@11-main 
+ 
+auto: The server will be started automatically on boot. This is the default when creating a new server.   It is suitable for frequently used servers, such as those powering live services or those being used for everyday development activities. 
+manual: The server will not be started automatically on boot, but it can be started 
+with pg_ctlcluster. This is suitable for custom servers that are seldom used. 
+disabled: The server is not supposed to be started. This setting is only a 
+protection from starting the server accidentally. The pg_ctlcluster wrapper won't let you start it, but a skilled user can easily bypass the protection. 
+ 
+ 
+Debian or Ubuntu, the command is as in the following example, which applies to the default version 11 instance: 
+pg_ctlcluster 11 main stop -m fast 
+ 
+The fast mode is the default since PostgreSQL 9.5; the previous default was to use the 
+smart mode, meaning wait for all users to finish before we exit. This can take a very long time, 
+and all the while new connections are refused. 
+ 
+Linux/Unix distributions, you can issue a database server stop command using 
+the fast mode, as follows: 
+pg_ctl -D datadir -m fast stop 
+ 
+When you do a fast stop, all users have their transactions aborted and all connections are disconnected. This is not very polite to users, but it still treats the server and its data with care, which is good. 
+ 
+basic command to perform an emergency stop on the server is the following: 
+pg_ctl -D datadir stop -m immediate 
+2. On Debian/Ubuntu, you can also use the following: 
+pg_ctlcluster 11 main stop -m immediate 
+ 
+When you do an immediate stop, all users have their transactions aborted and all connections are disconnected. There is no clean shutdown, nor is there politeness of any kind. 
+ 
+An immediate mode stop is similar to a database crash. Some cached files will need to be 
+rebuilt, and the database itself needs to undergo crash recovery when it comes back up. 
+ 
+sudo systemctl reload SERVICEUNIT 
+ 
+ 
+Otherwise, on each platform, there is a specific command to reload the server without using 
+systemd. All of these are listed as follows: 
+On Ubuntu and Debian, you can issue the following: 
+pg_ctlcluster 11 main reload 
+On older Red Hat/Fedora, the command is as follows: 
+service postgresql reload 
+You can also use the following command: 
+pg_ctl -D /var/lib/pgsql/data reload 
+ 
+On all platforms, you can also reload the configuration files while still connected to 
+PostgreSQL. If you are a superuser, this can be done from the following command line: 
+postgres=# select pg_reload_conf(); 
+ 
+ 
+possible to implement a new authentication rule that is violated by the current session. It won't force you to disconnect, but when you do disconnect, you may not be able to reconnect. 
+ 
+ 
+To reload the configuration files, we send the SIGHUP signal to the postmaster, which then passes that to all connected backends. That's why some people call reloading the server sigh-up-ing. 
+ 
+ 
+pg_settings catalog table, you'll see that there is a column named context. Each setting has a time and a place where it can be changed. Some parameters can only be reset by a server reload, and so the value of context for those parameters will be a sighup 
+ 
+postgres=# SELECT name, setting, unit ,(source = 'default') as is_default FROM pg_settings WHERE context = 'sighup' AND (name like '%delay' or name like '%timeout') AND setting != '0'; 
+ 
+find the PID of the backend using pg_stat_activity. Then, from the OS prompt, 
+issue the following: 
+kill -SIGHUP pid 
+Alternatively, we can do both at once, as shown in this command: 
+kill -SIGHUP \ 
+&& psql -t -c "select pid from pg_stat_activity limit 1"; 
+ 
+psql -c "CHECKPOINT" 
+ 
+ 
+There is an extension called pgfincore that implements a set of functions to manage PostgreSQL data pages in the operating system's file cache. One possible use is to preload some tables so that PostgreSQL will load them quicker when requested. 
+ 
+There is also a contrib module called pg_prewarm, which addresses a similar problem. While there is some overlap with pgfincore, the feature sets are not the same; for instance, pgfincore can operate on files that aren't in the shared buffer cache, and it can also preload full relations with only a few system calls, taking into account the existing cache; 
+ 
+In certain emergencies, you may need to lock down the server completely, or just prevent specific users from accessing the database 
+ 
+ALTER DATABASE foo_db CONNECTION LIMIT 0; 
+ 
+This will limit normal users from connecting to that database, though it will still allow superuser connections. 
+ 
+Restrict the connections for a specific user to zero by setting the connection limit to zero (see the Restricting users to only one session each recipe): 
+ALTER USER foo CONNECTION LIMIT 0; 
+ 
+ 
+ 
+ 
+ 
+Create a new file named pg_hba_lockdown.conf, and add the following two lines to the file. This puts in place rules that will completely lock down the server, including superusers. You should have no doubt that this is a serious and drastic action: 
+ 
+# TYPE DATABASE USER ADDRESS METHOD 
+local all all reject 
+host all all 0.0.0.0/0 reject 
+ 
+If you still want superuser access, then try something such as the 
+following: 
+ 
+# TYPE DATABASE USER ADDRESS METHOD 
+local all postgres peer 
+local all all reject 
+host all all 0.0.0.0/0 reject 
+ 
+Copy the existing pg_hba.conf file to pg_hba_access.conf so that it can be replaced later, if required. 
+Copy pg_hba_lockdown.conf to pg_hba.conf. 
+ 
+ 
+restrict users to only one connection using the following command: 
+postgres=# ALTER ROLE fred CONNECTION LIMIT 1; 
+ALTER ROLE 
+This will then cause any additional connections to receive the following error message: 
+FATAL: too many connections for role "fred". 
+ 
+Setting the value to zero will completely restrict normal connections. Note that even if you 
+set the connection limit to zero for superusers, they will still be able to connect. 
+ 
+ 
+if you lower the limit, you should immediately check to see whether there are more sessions connected than the new limit you just set. Otherwise, there may be some surprises if there is a crash: 
+postgres=> SELECT rolconnlimit FROM pg_roles WHERE rolname = 'fred'; 
+rolconnlimit 
+-------------- 
+1 
+(1 row) 
+postgres=> SELECT count(*) FROM pg_stat_activity WHERE usename = 'fred'; 
+count 
+------- 
+2 
+(1 row) 
+ 
+You can terminate a user's session with the pg_terminate_backend() function included with PostgreSQL. This function takes the PID, or the process ID, of the user's session on the server. This process is known as the backend, and it is a different system process from the program that runs the client. 
+ 
+postgres=# SELECT count(pg_terminate_backend(pid)) FROM pg_stat_activity WHERE usename NOT IN 
+(SELECT usename FROM pg_user WHERE usesuper); 
+ 
+ 
+ 
+WHERE application_name = 'myappname' 
+WHERE wait_event_type IS NOT NULL AND wait_event_type != 'Activity' 
+WHERE state = 'idle in transaction' 
+WHERE state = 'idle' 
+ 
+pg_terminate_backend() function sends a signal directly to the operating system process for that session. 
+ 
+Suppose you take note of the PID of session A and decide to 
+disconnect it. Before you actually issue pg_terminate_backend(), session A disconnects, 
+and right after, a new session, session B, is given exactly the same PID. So, when you 
+terminate that PID, you hit session B instead. 
+ 
+following events must happen 
+as well: 
+One of the sessions you are trying to close must terminate independently in the 
+very short interval between the moment pg_stat_activity is read and the 
+moment pg_terminate_backend() is executed. 
+Another session on the same database server must be started in the even-shorter 
+interval between the old session closing and the execution of 
+pg_terminate_backend(). 
+The new session must get exactly the same PID value as the old session, which is 
+less than one chance in 32,000 on a 32-bit Linux machine. 
+ 
+ 
+If you want to run multiple physical databases on one server, then you have four main 
+options, which are as follows: 
+Option 1: Run multiple sets of tables in different schemas in one database of a 
+PostgreSQL instance (covered in the Using multiple schemas recipe) 
+Option 2: Run multiple databases in the same PostgreSQL instance (covered in 
+the Giving users their own private database recipe) 
+Option 3: Run multiple PostgreSQL instances on the same virtual/physical 
+system (covered in the Running multiple servers on one system recipe) 
+Option 4: Run separate PostgreSQL instances in separate virtual machines on the 
+same physical server 
+ 
+ 
+the specific requirements, which are as 
+follows: 
+If our goal is the separation of physical resources, then option 3 or option 4 
+works best. Separate database servers can be easily assigned different disks, 
+individual memory allocations can be assigned, and we can take the servers up 
+or down without impacting the others. 
+If our goal is security, then option 2 is sufficient. 
+If our goal is merely the separation of tables for administrative clarity, then 
+option 1 or option 2 can be useful. 
+ 
+ 
+Option 2 allows complete separation for security purposes. This does, however, prevent 
+someone with privileges on both groups of tables from performing a join between those 
+tables. So, if there is a possibility of future cross-analytics, it might be worth considering 
+option 1. However, it might also be argued that such analytics should be carried out on a 
+separate data warehouse, not by co-locating production systems. 
+Option 3 has a difficulty in many of the PostgreSQL distributions: the default installation 
+uses a single location for the database, making it a little harder to configure that option. 
+Ubuntu/Debian handles that aspect particularly well, making it more attractive in that 
+environment. 
+Option 4 can be applied using virtualization technology, but that is outside the scope of this 
+book. 
+ 
+ 
+CREATE SCHEMA finance; 
+CREATE SCHEMA sales; 
+2. We can then create objects directly within those schemas using fully 
+qualified names, like this: 
+CREATE TABLE finance.month_end_snapshot (.....) 
+ 
+select current_schema; 
+This returns an output like the following: 
+current_schema 
+---------------- 
+Public 
+ 
+3. When we access database objects, we use the user-settable search_path 
+parameter to identify the schemas to search for. The current_schema is the first 
+schema in the search_path parameter. There is no separate parameter for the 
+current_schema. 
+ 
+ALTER ROLE fiona SET search_path = 'finance'; 
+ALTER ROLE sally SET search_path = 'sales'; 
+ 
+ 
+The public schema is not mentioned on search_path, so it will not be searched. All tables created by fiona will go into the finance schema by default, whereas all tables created by sally will go into the sales schema by default. 
+ 
+users for finance and sales will be able to see that the other schema exists 
+and change search_path to use it, but we will be able to GRANT or REVOKE 
+privileges so that they can neither create objects nor read data in other people's 
+schemas: 
+ 
+REVOKE ALL ON SCHEMA finance FROM public; 
+GRANT ALL ON SCHEMA finance TO fiona; 
+REVOKE ALL ON SCHEMA sales FROM public; 
+GRANT ALL ON SCHEMA sales TO sally; 
+ 
+ 
+can also set default privileges so that they are picked up when objects are 
+created by using the following command: 
+ALTER DEFAULT PRIVILEGES FOR USER fiona IN SCHEMA finance 
+GRANT SELECT ON TABLES TO PUBLIC; 
+ 
+ 
+The PostgreSQL concept of search_path is similar to the concept of a PATH environment 
+variable. The PostgreSQL concept of the current schema is similar to the concept of the current 
+working directory. There is no cd command to change the directory. The current working 
+directory is changed by altering search_path. 
+ 
+ 
+Giving users their own private database 
+Separating data and users is a key part of administration. There will always be a need to 
+give users a private, secure, or simply risk-free area (sandbox) to use the database. Here's 
+ 
+steps to create a database with restricted access to a specific user: 
+1. We can create a database for a specific user with some ease. From the command 
+line, as a superuser, these actions would be as follows: 
+postgres=# create user fred; 
+CREATE ROLE 
+postgres=# create database fred owner fred; 
+CREATE DATABASE 
+ 
+ 
+Starting from /var/lib/postgresql, which is the home directory of the postgres user, 
+there is a subdirectory for each major version, for example, 10 or 9.3, inside which the 
+individual data directories are placed. When installing PostgreSQL server packages, a data 
+directory is created with the default name of main. Configuration files are separately placed 
+in /etc/postgresql/<version>/<name>, and log files are created in 
+/var/log/postgresql/postgresql-<version>-<name>.log. 
+ 
+ 
+1. We start by running this command: 
+sudo -u postgres pg_createcluster 11 main2 
+2. The new database server can then be started using the following command: 
+sudo -u postgres pg_ctlcluster 11 main2 start 
+This is sufficient to create and start an additional database cluster in version 11, named 
+main2. The data and configuration files are stored inside the 
+/var/lib/postgresql/11/main2/ and /etc/postgresql/11/main2/ directories, 
+ 
+ 
+Setting up a connection pool 
+A connection pool is a term that's used for a collection of already-connected sessions that 
+can be used to reduce the overhead of connection and reconnection. 
+ 
+PgBouncer, which is designed as a very lightweight connection 
+pool. The name comes from the idea that the pool can be paused and resumed to allow the 
+server to be restarted, or bounced. 
+ 
+ 
+ 
+1. Create a pgbouncer.ini file, as follows: 
+; 
+; pgbouncer configuration example 
+; 
+[databases] 
+postgres = port=5432 dbname=postgres 
+[pgbouncer] 
+listen_addr = 127.0.0.1 
+listen_port = 6432 
+admin_users = postgres 
+;stats_users = monitoring userid 
+auth_type = any 
+; put these files somewhere sensible: 
+auth_file = users.txt 
+logfile = pgbouncer.log 
+pidfile = pgbouncer.pid 
+server_reset_query = DISCARD ALL; 
+; default values 
+pool_mode = session 
+default_pool_size = 20 
+log_pooler_errors = 0 
+ 
+ 
+2. Create a users.txt file. This must contain the minimum users mentioned in 
+admin_users and stats_users. Its format is very simple: a collection of lines 
+with a username and a password. 
+ 
+2. Create a users.txt file. This must contain the minimum users mentioned in 
+admin_users and stats_users. Its format is very simple: a collection of lines 
+with a username and a password. 
+ 
+ 
+wish to create the users.txt file by directly copying the details from 
+the server. 
+ 
+postgres=> \o users.txt 
+postgres=> \t 
+postgres=> SELECT '"'||rolname||'" "'||rolpassword||'"' 
+postgres-> FROM pg_authid; 
+postgres=> \q  
+ 
+Launch pgbouncer: 
+pgbouncer -d pgbouncer.ini  
+ 
+Test the connection; it should respond to reload: 
+psql -p 6432 -h 127.0.0.1 -U postgres pgbouncer -c "reload" 
+7. Finally, verify that PgBouncer's max_client_conn parameter does not exceed the max_connections parameter on PostgreSQL.  
+ 
+PgBouncer is not multithreaded, so it runs in a single process, and, thus, on a single CPU. It is very efficient, but very large data transfers will take more time and reduce concurrency, so create those data dumps using a direct connection.  
+ 
+PgBouncer provides connection pooling. If you set pool_mode = transaction, then 
+PgBouncer will also provide connection concentration. This allows hundreds or even 
+thousands of incoming connections to be managed,  
+ 
+PgBouncer also releases sessions every server_lifetime. This allows the server to free 
+backends in rotation in order to avoid issues with very long-lived session connections.  
+ 
+retrieving passwords from the userlist.txt file, PgBouncer can retrieve them 
+directly from PostgreSQL, using the optional auth_user and auth_query parameters.  
+ 
+SELECT usename, passwd FROM pg_shadow WHERE usename=$1  
+ 
+can also use the RELOAD command to make PgBouncer reload (which means reread) the parameter files, as we did to test that everything is working  
+ 
+ 
+ 
+SHOW command Result set. 
+SHOW STATS Traffic stats, total and average requests, query duration, bytes sent/received, and so 
+on. Also, take a look at SHOW STATS_TOTALS and SHOW STATS_AVERAGES. 
+SHOW SERVERS One row per connection to the database server. 
+SHOW CLIENTS One row per connection from the client. 
+SHOW POOLS One row per pool of users. 
+SHOW LISTS Gives a good summary of resource totals. 
+SHOW USERS Lists users in users.txt. 
+SHOW DATABASES Lists databases in pgbouncer.ini. 
+SHOW CONFIG Lists configuration parameters. 
+SHOW FDS Shows file descriptors. 
+SHOW SOCKETS Shows file sockets. 
+SHOW VERSION Shows the PgBouncer version.  
+ 
+ 
+will demonstrate another way to use PgBouncer—one instance can connect to 
+databases hosted by different database servers at the same time. These databases can be on 
+separate hosts, and can even have different major versions of PostgreSQL!  
+ 
+ 
+need to ask PgBouncer instead, and we do so by using the SHOW command when 
+connected to the pgbouncer special administrative database: 
+myfirstdb=# \c pgbouncer 
+psql (10.1, server 1.8.1/bouncer) 
+You are now connected to database "pgbouncer" as user "postgres". 
+pgbouncer=# show databases;  
+ 
+ 
+ 
+Tables and Data  
+ 
+Here are the points you should consider when naming your database objects: 
+The name follows the existing standards and practices in place. Inventing new 
+standards isn't helpful; enforcing existing standards is. 
+The name clearly describes the role or table contents. 
+For major tables, use short, powerful names. 
+Name lookup tables after the table to which they are linked, such as 
+account_status. 
+For associative or linked tables, use all the names of the major tables to which 
+they relate, such as customer_account. 
+Make sure that the name is clearly distinct from other similar names. 
+Use consistent abbreviations. 
+Use underscores. Casing is not preserved by default, so using camel case names, 
+such as customerAccount, as used in Java, will just leave them unreadable. See 
+the Handling objects with quoted names recipe. 
+Use consistent plurals, or don't use them at all. 
+Use suffixes to identify the content type or domain of an object. PostgreSQL 
+already uses suffixes for automatically generated objects. 
+Think ahead. Don't pick names that refer to the current role or location of an 
+object. So don't name a table London, because it exists on a server in London. 
+That server might get moved to Los Angeles.  
+ 
+12. Think ahead. Don't pick names that imply that an entity is the only one of its 
+kind, such as a table named TEST, or a table named BACKUP_DATA. On the other 
+hand, such information can be put in the database name, which is not normally 
+used from within the database. 
+13. Avoid using acronyms in place of long table names. For example, 
+money_allocation_decision is much better than MAD. This is especially 
+important when PostgreSQL translates the names into lowercase, so the fact that 
+it is an acronym may not be clear. 
+14. The table name is commonly used as the root for other objects that are created, so 
+don't add the table suffix or similar ideas.  
+ 
+standard names for indexes in PostgreSQL are as follows: 
+{tablename}_{columnname(s)}_{suffix} 
+Here, the suffix is one of the following: 
+pkey: This is used for a primary key constraint 
+key: This is used for a unique constraint 
+excl: This is used for an exclusion constraint 
+idx: This is used for any other kind of index  
+ 
+ 
+Handling objects with quoted names 
+PostgreSQL object names can contain spaces and mixed-case characters if we enclose the 
+table names in double quotes. This can cause some difficulties, so this recipe is designed to 
+help you if you get stuck with this kind of problem. 
+Case sensitivity issues can often be a problem for people more used to working with other 
+database systems, such as MySQL, or for people who are facing the challenge of migrating 
+code away from MySQL.  
+ 
+create a table that uses a quoted name with mixed cases, such as the following: 
+CREATE TABLE "MyCust" 
+AS 
+SELECT * FROM cust;  
+ 
+try to access these tables without the proper case, we get this error: 
+postgres=# SELECT count(*) FROM mycust; 
+ERROR: relation "mycust" does not exist LINE 1: SELECT * FROM mycust; 
+So, we write it in the correct case: 
+postgres=# SELECT count(*) FROM MyCust; 
+ERROR: relation "mycust" does not exist 
+LINE 1: SELECT * FROM mycust; 
+This still fails, and in fact gives the same error.  
+ 
+postgres=# SELECT count(*) FROM "MyCust";  
+ 
+postgres=# SELECT quote_ident('MyCust'); 
+quote_ident 
+------------- 
+"MyCust" 
+(1 row) 
+postgres=# SELECT quote_ident('mycust'); 
+quote_ident 
+------------- 
+mycust 
+(1 row) 
+ 
+quote_ident() function may be especially useful if you are creating a table based ona variable name in a PL/pgSQL function, as follows: 
+EXECUTE 'CREATE TEMP TABLE ' || quote_ident(tablename) || '(col1 INTEGER);' 
+ 
+will show you how to identify columns that are defined in different ways in 
+different tables, using a query against the catalog. We use an information_schema query, 
+as follows: 
+SELECT 
+table_schema 
+,table_name 
+,column_name 
+,data_type 
+||coalesce(' ' || text(character_maximum_length), '') 
+||coalesce(' ' || text(numeric_precision), '') 
+||coalesce(',' || text(numeric_scale), '') 
+as data_type 
+FROM information_schema.columns 
+WHERE column_name IN 
+(SELECT column_name FROM 
+(SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale 
+FROM information_schema.columns WHERE table_schema NOT IN ('information_schema', 'pg_catalog') 
+GROUP BY column_name ,data_type ,character_maximum_length ,numeric_precision ,numeric_scale 
+) derived 
+GROUP BY column_name HAVING count(*) > 1 
+) 
+AND table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY column_name; 
+ 
+The query gives an output as follows: 
+table_schema | table_name | column_name | data_type 
+--------------+------------+-------------+--------------- 
+s1 | x | col1 | smallint 16,0 
+s2 | x | col1 | integer 32,0  
+ 
+ 
+WITH table_definition as 
+( SELECT table_schema 
+, table_name 
+, string_agg( column_name || ' ' || data_type 
+, ',' ORDER BY column_name 
+) AS def 
+FROM information_schema.columns 
+WHERE table_schema NOT IN ( 'information_schema' 
+, 'pg_catalog') 
+GROUP BY table_schema 
+, table_name 
+) 
+, unique_definition as 
+( SELECT DISTINCT table_name 
+, def 
+FROM table_definition 
+) 
+, multiple_definition as 
+( SELECT table_name 
+FROM unique_definition 
+GROUP BY table_name 
+HAVING count( * ) > 1 
+) 
+SELECT table_schema 
+, table_name 
+, column_name 
+, data_type  
+FROM information_schema.columns 
+WHERE table_name 
+IN ( SELECT table_name FROM multiple_definition ) 
+ORDER BY table_name 
+, table_schema 
+, column_name; 
+ 
+Here is its output: 
+table_schema | table_name | column_name | data_type 
+--------------+------------+-------------+----------- 
+s1 | x | col1 | smallint 
+s1 | x | col2 | text 
+s2 | x | col1 | integer 
+s2 | x | col3 | numeric 
+(4 rows) 
+ 
+definitions of tables are held within PostgreSQL, and can be accessed using the Information Schema catalog views  
+ 
+compare the definitions of any two tables using the following function: 
+CREATE OR REPLACE FUNCTION diff_table_definition 
+(t1_schemaname text 
+,t1_tablename text 
+,t2_schemaname text 
+,t2_tablename text) 
+RETURNS TABLE 
+(t1_column_name text 
+,t1_data_type text 
+,t2_column_name text 
+,t2_data_type text  
+) 
+LANGUAGE SQL 
+as 
+$$ 
+SELECT 
+t1.column_name 
+,t1.data_type 
+,t2.column_name 
+,t2.data_type 
+FROM 
+(SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_schema = $1 
+AND table_name = $2 
+) t1 
+FULL OUTER JOIN 
+(SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_schema = $3 
+AND table_name = $4 
+) t2 
+ON t1.column_name = t2.column_name 
+AND t1.data_type = t2.data_type 
+WHERE t1.column_name IS NULL OR t2.column_name IS NULL 
+; 
+$$; 
+ 
+ 
+ 
+Here is its usage with output: 
+# select diff_table_definition('s1','x','s2','x'); 
+diff_table_definition 
+----------------------- 
+(col1,smallint,,) 
+(col2,text,,) 
+(,,col3,numeric) 
+(,,col1,integer) 
+(4 rows) 
+ 
+ 
+The BEGIN and COMMIT commands wrap the LOCK and DELETE commands into a single 
+transaction, which is required. Otherwise, the lock will be released immediately after being 
+taken. 
+Another reason to use a single transaction is that we can always roll back if anything goes 
+wrong, which is a good thing when we are removing data from a live table.  
+ 
+ 
+To prevent duplicate rows, we need to create a unique index that the database server can 
+use to enforce uniqueness of a particular set of columns  
+ 
+1. Create a primary key constraint on the set of columns. We are allowed only one 
+of these per table. The values of the data rows must not be NULL, as we force the 
+columns to be NOT NULL if they aren't already: 
+ALTER TABLE new_cust ADD PRIMARY KEY(customerid);  
+ 
+2. This creates a new index named new_cust_pkey. 
+3. Create a unique constraint on the set of columns. We can use these instead of/or 
+with a primary key. There is no limit on the number of these per table. NULL 
+values are allowed in the columns: 
+ALTER TABLE new_cust ADD UNIQUE(customerid); 
+4. This creates a new index named new_cust_customerid_key. 
+5. Create a unique index on the set of columns: 
+CREATE UNIQUE INDEX ON new_cust (customerid); 
+6. This creates a new index named new_cust_customerid_idx.  
+ 
+ 
+PostgreSQL offers a better solution, based on range types. In fact, every data type that 
+supports a btree operator class (that is, a way of ordering any two given values) can be 
+used to create a range type. In our case, the SQL is as follows: 
+CREATE TYPE inetrange AS RANGE (SUBTYPE = inet);  
+ 
+CREATE TABLE iprange2 (iprange inetrange ,owner text);  
+ 
+ 
+postgres=# SELECT attname, n_distinct FROM pg_stats WHERE schemaname = 'public' AND  
+tablename = 'ord'; 
+ 
+preceding example was chosen because we have two potential answers. If the value of 
+n_distinct is -1, then the column is thought to be unique within the sample of rows 
+examined. 
+ 
+It's possible that there is no single column that uniquely identifies the rows. Multiple column keys are fairly common. If none of the columns were unique, then we should start looking for unique keys that are combinations of the most unique columns. 
+ 
+The ANALYZE command works by taking a sample of the table data, and then performing a 
+statistical analysis of the results. 
+ 
+The n_distinct value has two different meanings, depending on its sign: if positive, it is the estimate of the number of distinct values for the column; if negative, it is the estimate of the density of such distinct values, with the sign changed. 
+ 
+For example, n_distinct = -0.2 means that a table of one million rows is expected to have 200,000 distinct values, while n_distinct = 5 means that we expect just five distinct values. 
+ 
+There are also some commercial tools used to generate application-specific test data for 
+PostgreSQL. They are available 
+at http://www.sqlmanager.net/products/postgresql/datagenerator and 
+http://www.datanamic.com/datagenerator/index.html. 
+The key features for any data generator are as follows: 
+The ability to generate data in the right format for custom data types 
+The ability to add data to multiple tables, while respecting foreign key constraints between tables 
+The ability to add data to non-uniform distributions 
+ 
+pg_dump –-exclude-table=mybigtable > db.dmp 
+pg_dump –-table=mybigtable –-schema-only > mybigtable.schema 
+psql -c '\copy (SELECT * FROM mybigtable 
+TABLESAMPLE BERNOULLI (1)) to mybigtable.dat' 
+5. Then reload onto a separate database using the following commands: 
+psql -f db.dmp 
+psql -f mybigtable.schema 
+psql -c '\copy mybigtable from mybigtable.dat' 
+ 
+4. Alternatively, from the command line, this would be as follows: 
+psql -c '\COPY sample FROM sample.csv CSV HEADER' 
+5. Note that the file can include a full file path if the data is in a different directory. 
+The psql \COPY command transfers data from the client system where you run 
+the command through to the database server, so the file is on the client. 
+6. If you are submitting SQL through another type of connection, then you should 
+use the following SQL statement: 
+COPY sample FROM '/mydatafiledirectory/sample.csv' CSV HEADER; 
+ 
+pgloader copes gracefully with errors. The COPY command loads all rows in a single transaction, so only a single error is enough to abort the load. pgloader breaks down an input file into reasonably sized chunks, and loads them piece by piece.  
+ 
+If some rows in a chunk cause errors, then pgloader will split it iteratively until it loads all the good rows and skips all the bad rows, which are then saved in a separate rejects file for later inspection. This behavior is very convenient if you have large data files with a small percentage of bad rows; 
+ 
+pgloader has additional overhead, but it also has the ability to load data using multiple 
+parallel threads, so it can be faster to use as well. pgloader's ability to reformat the data via 
+user-defined functions is often essential; straight COPY is just too simple. 
+ 
+ 
+ 
+6 Security 
+PostgreSQL allows you to control access 
+based upon the host that is trying to connect, using the pg_hba.conf file.  
+ 
+Fine-grained control over access can be managed using the Row-Level Security (RLS) 
+feature, which allows a defined policy on selected tables. 
+ 
+The minimal production database setup contains at least two types of users, namely administrators and end users, where administrators can do everything (they are superusers), and end users can only do very little, usually just modifying the data in only a few tables and reading from a few more. 
+ 
+It is not a good idea to let ordinary users create or change database object definitions, 
+meaning that they should not have the CREATE privilege on any schema, including PUBLIC 
+ 
+The PostgreSQL superuser 
+ 
+A PostgreSQL superuser is a user that bypasses all permission checks, except the right to 
+log in. This is a dangerous privilege and should not be used carelessly. 
+ 
+1. A user becomes a superuser when it is created with the SUPERUSER attribute set: 
+CREATE USER username SUPERUSER; 
+ 
+ALTER USER username SUPERUSER; 
+ 
+A user can be deprived of its superuser status by removing the SUPERUSER 
+attribute using this command: 
+ALTER USER username NOSUPERUSER; 
+ 
+revoke all rights on the table1 table from the user2 user, you must run the following 
+SQL command: 
+REVOKE ALL ON table1 FROM user2; 
+ 
+\z table1 to list who are having privilege 
+ 
+The \z command, as well as its synonym, \dp, display all privileges granted on tables, 
+views, and sequences. 
+ 
+\du user2: we check whether user2 is a member of any of those roles 
+ 
+show search_path ; 
+ 
+GRANT INSERT, UPDATE, DELETE ON someschema.comments TO webreaders; 
+After running this command, both bob and tim have all of the aforementioned privileges 
+on the comments table. 
+ 
+This assumes that both the bob and tim roles were created with the INHERIT default setting. 
+ 
+1. We want to grant somerole the ability to view existing data and insert new data; 
+we also want to provide the ability to amend existing data, limited to column 
+col2 only. We use the following self-evident statements: 
+GRANT SELECT, INSERT ON someschema.sometable2 TO somerole; 
+GRANT UPDATE (col2) ON someschema.sometable2 TO somerole; 
+2. Let's assume the identity of the somerole role and test these privileges with the 
+following commands: 
+SET ROLE TO somerole; 
+INSERT INTO someschema.sometable2 VALUES (1, 'One'); 
+SELECT * FROM someschema.sometable2 WHERE col1 = 1; 
+3. As expected, we are able to insert a new row and to view its contents. Let's now 
+check our ability to update individual columns. We start with the second 
+column, which we have authorized: 
+UPDATE someschema.sometable2 SET col2 = 'The number one'; 
+4. This command returns the familiar output: 
+UPDATE 1 
+5. This means that we were able to successfully update that column in one row. 
+Now, we try to update the first column: 
+UPDATE someschema.sometable2 SET col1 = 2; 
+6. This time, we get the following error message: 
+ERROR: permission denied for relation sometable2 
+ 
+Granting privileges on a table means giving them to all columns present and future, while 
+column-level privileges require the explicit indication of columns and, therefore, don't 
+extend automatically to new columns. 
+ 
+Granting user access to specific rows 
+PostgreSQL supports granting users privileges on some rows only. 
+ 
+RLS, which is available only in PostgreSQL version 9.5 or later, so start by 
+checking that you are not using an older version. 
+ 
+RLS must also be enabled on that table: 
+ALTER TABLE someschema.sometable3 ENABLE ROW LEVEL SECURITY; 
+ 
+GRANT SELECT ON someschema.sometable3 TO somerole; 
+ 
+grant the ability to access some rows only, we create a policy specifying what is 
+allowed and on which rows. For instance, this way, we can enforce the condition that 
+somerole is only allowed to select rows with positive values of col1: 
+ 
+CREATE POLICY example1 ON someschema.sometable3 FOR SELECT TO somerole USING (col1 > 0); 
+ 
+What if we want to introduce a policy on the INSERT clause? The preceding policy shows 
+how the USING clause specifies which rows are affected. There is also a WITH CHECK clause 
+that can be used to specify which inserts are accepted 
+ 
+CREATE POLICY example2 ON someschema.sometable3 FOR INSERT TO somerole WITH CHECK (col1 > 0); 
+ 
+ 
+RLS policies are created and dropped on a given table using the CREATE POLICY syntax. The RLS policy itself must also be enabled explicitly on the given table, because it is disabled by default. 
+ 
+RLS can lead to very complex configurations for a variety of reasons, as in the following instances: 
+ 
+An UPDATE policy can specify both the rows on which we act and what changes can be accepted 
+UPDATE and DELETE policies, in some cases, require visibility as granted by an appropriate SELECT policy 
+ 
+UPDATE policies are also applied to INSERT ... ON CONFLICT DO UPDATE 
+ 
+ 
+If you add the --interactive command-line option, you activate the interactive mode, 
+which means you will be asked some questions, as follows 
+ 
+pguser@hvost:~$ createuser --interactive alice 
+Shall the new role be a superuser? (y/n) n 
+Shall the new role be allowed to create databases? (y/n) y 
+Shall the new role be allowed to create more new roles? (y/n) n 
+ 
+In interactive mode, questions are asked only if they make sense. One example is when the 
+user is a superuser; no other questions are asked because a superuser is not subject to 
+privilege checks. Another example is when one of the preceding options is used to specify a 
+non-default setting; the corresponding question will not be asked 
+ 
+The CREATE USER and CREATE GROUP commands are actually variations of CREATE ROLE. 
+The CREATE USER username; statement is equivalent to CREATE ROLE username LOGIN;, and the CREATE GROUP groupname; statement is equivalent to CREATE ROLE groupname NOLOGIN;. 
+ 
+ 
+1. To temporarily prevent the user from logging in, run this command: 
+pguser=# alter user bob nologin; 
+ALTER ROLE 
+2. To let the user connect again, run the following: 
+pguser=# alter user bob login; 
+ALTER ROLE 
+ 
+Limiting the number of concurrent connections by a user 
+ 
+The same result can be achieved by setting the connection limit for that user to 0: 
+pguser=# alter user bob connection limit 0; 
+ALTER ROLE 
+To allow 10 concurrent connections for the bob user, run this command: 
+pguser=# alter user bob connection limit 10; 
+ALTER ROLE 
+To allow an unlimited number of connections for this user, run the following: 
+pguser=# alter user bob connection limit -1; 
+ALTER ROLE 
+ 
+Forcing NOLOGIN users to disconnect 
+ 
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity a JOIN pg_roles r ON a.usename = r.rolname AND NOT rolcanlogin; 
+ 
+disconnects all users who no longer are allowed to connect by terminating the backends opened by these users. 
+ 
+Removing a user without dropping their data 
+testdb=# drop user bob; 
+ERROR: role “bob” cannot be dropped because some objects depend on it 
+DETAIL: owner of table bobstable 
+owner of sequence bobstable_id_seq 
+ 
+you can assign the rights of the deleted user to a new user, using the following code: 
+pguser=# GRANT bob TO bobs_replacement; 
+GRANT 
+ 
+If you really need to get rid of a user, you have to assign all ownership to another user. To 
+do so, run the following query, which is a PostgreSQL extension to standard SQL: 
+ 
+REASSIGN OWNED BY bob TO bobs_replacement; 
+ 
+ 
+If you really need to get rid of a user, you have to assign all ownership to another user. To 
+do so, run the following query, which is a PostgreSQL extension to standard SQL: 
+REASSIGN OWNED BY bob TO bobs_replacement; 
+ 
+ 
+Checking whether all users have a secure password 
+ 
+The best you can do is to make sure that all user passwords are encrypted, and that your pg_hba.conf file does not allow logins with a plain password; that is, always use the SCRAM-SHA-56 login method for users, which was added in PostgreSQL 10. 
+ 
+If you don't trust your users to select strong passwords, you can write a wrapper 
+application that checks the password strength and makes them use that when changing 
+passwords. A contrib module lets you do this for a limited set of cases (the password is 
+sent from client to server in plain text). 
+ 
+Auditing database access 
+Auditing database access is a much bigger topic than you might expect because it can cover 
+a whole range of requirements. 
+ 
+decide which of these you want and look at the appropriate subsection: 
+What were the SQL statements executed? Auditing SQL 
+What were the tables accessed? Auditing table access 
+What were the data rows changed? Auditing data changes 
+What were the data rows viewed? Not described here, usually too much data 
+ 
+ 
+ 
+Auditing SQL 
+There are two main ways to log SQL: 
+Using the PostgreSQL log_statement parameter 
+Using the pgaudit extension's pgaudit.log parameter 
+ 
+log_statement parameter can be set to one of the following options: 
+ALL: Logs all SQL statements executed at top level 
+MOD: Logs all SQL statements for INSERT, UPDATE, DELETE, and TRUNCATE 
+ddl: Logs all SQL statements for DDL commands 
+NONE: No statements logged 
+ 
+The pgaudit extension provides two levels of audit logging: session and object levels. The 
+session level has been designed to solve some of the problems of log_statement. 
+pgaudit will log all access, even if it is not executed as a top-level statement, and it will log 
+all dynamic SQL. pgaudit.log can be set to include zero or more of the following settings: 
+ 
+READ: SELECT and COPY 
+WRITE: INSERT, UPDATE, DELETE, TRUNCATE, and COPY 
+FUNCTION: Function calls and DO blocks 
+ROLE: GRANT, REVOKE, CREATE/ALTER/DROP ROLE 
+DDL: All DDL not already included in the ROLE category 
+MISC: Miscellaneous—DISCARD, FETCH, CHECKPOINT, VACUUM, and so on 
+ 
+pgaudit.log = 'role, ddl' 
+You should set these parameters to reduce the overhead of logging: 
+pgaudit.log_catalog = off 
+pgaudit.log_relation = off 
+pgaudit.log_statement_once = on 
+ 
+ 
+To make it easier to access the audit log per table, adjust these settings: 
+pgaudit.log_relation = on 
+pgaudit.log_statement_once = off 
+ 
+Auditing data changes 
+This recipe provides different ways of collecting changes to data contained in the tables for 
+auditing purposes. 
+ 
+ 
+Always knowing which user is logged in 
+ 
+we just logged the value of the user variable in the current PostgreSQL session to log the current user role. 
+ 
+This does not always mean that this particular user was the user that was actually 
+authenticated at the start of the session. For example, a superuser can execute the SET 
+ROLE TO ... command 
+ 
+It is possible to differentiate between the logged-in role and the assumed role using the 
+current_user and session_user session variables: 
+postgres=# select current_user, session_user; 
+current_user | session_user 
+-------------+-------------- 
+postgres | postgres 
+postgres=# set role to bob; 
+SET 
+postgres=> select current_user, session_user; 
+current_user | session_user 
+-------------+-------------- 
+bob | postgres 
+ 
+If a role or user is created with the NOINHERIT option, this user will not automatically get 
+the rights that have been granted to the other roles that have been granted to itself. To claim 
+these rights from a specific role, it has to set its role to one of those other roles. 
+ 
+ 
+Integrating with LDAP 
+This recipe shows you how to set up your PostgreSQL system so that it uses the LDAP for 
+authentication. 
+ 
+PostgreSQL authentication file, pg_hba.conf, we define some address ranges to use LDAP as an authentication method, and we configure the LDAP server for this address range: 
+ 
+host all all 10.10.0.1/16 ldap \ 
+ldapserver=ldap.our.net ldapprefix="cn=" ldapsuffix=", dc=our,dc=net" 
+ 
+This setup makes the PostgreSQL server check passwords from the configured LDAP 
+server. User rights are not queried from the LDAP server but have to be defined inside the 
+database using the ALTER USER, GRANT, and REVOKE commands. 
+ 
+ 
+For server setup, including the search + bind mode, visit  
+http:/ / www.postgresql. org/ docs/ 11/ static/ auth- methods. html#AUTH- LDAP 
+For client setup, visit http:/ / www. postgresql. org/ docs/ 11/ static/ libpqldap.html 
+ 
+ 
+Set ssl = on in postgresql.conf and restart the database. 
+ 
+If ssl = on is set, then PostgreSQL listens to both plain and SSL connections on the same 
+port (5432 by default) and determines the type of connection from the first byte of a new 
+connection. 
+ 
+want to allow only SSL clients, use the hostssl keyword instead of host. 
+The contents of pg_hba.conf can be seen using the pg_hba_file_rules view. 
+The following fragment of pg_hba.conf enables both non-SSL and SSL connections from 
+the 192.168.1.0/24 local subnet, but requires SSL from everybody accessing the database 
+from other networks: 
+host all all 192.168.1.0/24 md5 
+hostssl all all 0.0.0.0/0 md5 
+ 
+ 
+Getting the SSL key and certificate 
+For web servers, you must usually get your SSL certificate from a recognized Certificate 
+Authority (CA), as most browsers complain if the certificate is not issued by a known CA. 
+ 
+For your database server, it is usually sufficient to generate the certificate yourself using 
+OpenSSL. The following commands generate a self-signed certificate for your server: 
+openssl genrsa 2048 > server.key 
+openssl req -new -x509 -key server.key -out server.crt 
+ 
+Setting up a client to use SSL 
+The behavior of the client application regarding SSL is controlled by an environment variable, PGSSLMODE. 
+ 
+File 	Contents 			         Effect 
+root.crt Certificates of one or more trustedCAs  PostgreSQL verifies that the server certificate is signed 
+by a trusted CA 
+root.crl Certificates revoked by CAs The server certificate must not be on this list 
+ 
+ 
+For testing purposes, or for setting up a single trusted user, you can use a self-signed 
+certificate: 
+openssl genrsa 2048 > client.key 
+openssl req -new -x509 -key server.key -out client.crt 
+In the server, set up a line in the pg_hba.conf file with the hostssl method and the 
+clientcert option set to 1: 
+hostssl all all 0.0.0.0/0 md5 clientcert=1 
+ 
+Put the client root certificate in the root.crt file in the server data directory ($PGDATA/root.crt). This file may contain multiple trusted root certificates. 
+ 
+In the client, put the client's private key and certificate in 
+~/.postgresql/postgresql.key and ~/.postgresql/postgresql.crt. Make sure 
+that the private key file is not world-readable or group-readable by running the following 
+command: 
+chmod 0600 ~/.postgresql/postgresql.key 
+ 
+In a Windows client, the corresponding files are 
+%APPDATA%\postgresql\postgresql.key and 
+%APPDATA%\postgres 
+ 
+ 
+the clientcert=1 option used with hostssl to require client certificates is no longer required, as it is implied by the cert method itself. 
+ 
+When using the cert authentication method, a valid client certificate is required, and the 
+cn (short for common name) attribute of the certificate will be compared to the requested 
+database username.  
+ 
+ 
+ 
+ 
+ 
+hostssl all all 0.0.0.0/0 cert map=x509cnmap 
+ 
+Here, x509cnmap is the name that we have arbitrarily chosen for our mapping. More 
+details on User Name Maps are provided in the Mapping external usernames to database 
+roles recipe. 
+ 
+Mapping external usernames to database roles 
+ 
+the authentication username is different from the PostgreSQL username. For 
+instance, this can happen when using an external system for authentication, such as 
+certificate authentication, as described in the previous recipe, or any other external or single 
+sign-on system authentication method from http:/ / www. postgresql. org/ docs/ 11/ 
+static/ auth- methods. html (GSSAPI, SSPI, Kerberos, Radius, or PAM). 
+ 
+Create a pg_ident.conf file in the usual place (PGDATA), with lines in the following 
+format: 
+map-name system-username database-username 
+Here, map-name is the value of the map option from the corresponding line in 
+pg_hba.conf, system-username is the username that the external system authenticated 
+the connection as, and database-username is the database user this system user is 
+allowed to connect as. 
+ 
+Encrypting sensitive data 
+This recipe shows you how to encrypt data using the pgcrypto contrib package. 
+ 
+pgcrypto is part of the contrib collection. Starting from version 10, on Debian and Ubuntu 
+it is part of the main postgresql-10 server package, while in previous versions there was 
+a separate package, for example, postgresql-contrib-9.6. 
+ 
+Answer some questions here (the defaults are OK, unless you are an expert), select the key 
+type as DSA and Elgamal, and enter an empty password. 
+Now, export the keys: 
+pguser@laptop:~$ gpg -a --export “PostgreSQL User (test key for PG 
+Cookbook) <pguser@somewhere.net>“ > public.key 
+pguser@laptop:~$ gpg -a --export-secret-keys “PostgreSQL User (test key for 
+PG Cookbook) <pguser@somewhere.net>“ > secret.key 
+Make sure only you and the postgres database user have access to the secret key: 
+pguser@laptop:~$ sudo chgrp postgres secret.key 
+pguser@laptop:~$ chmod 440 secret.key 
+pguser@laptop:~$ ls -l *.key 
+-rw-r--r-- 1 pguser pguser 1718 2016-03-26 13:53 public.key 
+-r--r----- 1 pguser postgres 1818 2016-03-26 13:54 secret.key 
+ 
+ 
+ 
+ 
+ 
+7. Database Administration 
+Writing a script that either succeeds entirely or fails entirely 
+ 
+From psql, you can do this by simply using the -1 or --single-transaction commandline options, as follows: 
+bash $ psql -1 -f myscript.sql 
+bash $ psql --single-transaction -f myscript.sql 
+ 
+The -1 option is short, but I recommend using --single-transaction, as it's much clearer which option is being selected. 
+ 
+by the end of the command, that object will not exist: 
+DROP VIEW IF EXISTS cust_view; 
+ 
+ 
+Writing a psql script that exits on the first error 
+ 
+$ psql -f test.sql -v ON_ERROR_STOP=on 
+psql:test.sql:1: ERROR: syntax error at or near "mistake1" 
+LINE 1: mistake1; 
+ 
+$ $EDITOR test.sql 
+\set ON_ERROR_STOP on 
+mistake1; 
+mistake2; 
+mistake3; 
+ 
+ON_ERROR_STOP variable is a psql special variable that controls the behavior of psql 
+as it executes in script mode. When this variable is set, a SQL error will generate an OS 
+return code 3, whereas other OS-related errors will return code 1. 
+ 
+psql -f vartest.sql 
+ 
+\set tabname mytable 
+\set colname mycol 
+\set colval 'myval' 
+ALTER TABLE :tabname ADD COLUMN :colname text; 
+UPDATE :tabname SET :colname = :'colval'; 
+ 
+psql -v tabname=mytab2 -f vartest.sql 
+ 
+ 
+we will create a script that picks the table with the largest number of dead 
+rows and runs VACUUM on it. 
+How to do it… 
+The script is as follows: 
+SELECT schemaname 
+, relname 
+, n_dead_tup 
+, n_live_tup 
+FROM pg_stat_user_tables 
+ORDER BY n_dead_tup DESC 
+LIMIT 1 
+\gset 
+\qecho Running VACUUM on table :"relname" in schema :"schemaname" 
+\qecho Rows before: :n_dead_tup dead, :n_live_tup live 
+VACUUM ANALYZE :schemaname.:relname; 
+\qecho Waiting 1 second... 
+SELECT pg_sleep(1); 
+SELECT n_dead_tup AS n_dead_tup_now 
+, n_live_tup AS n_live_tup_now 
+FROM pg_stat_user_tables 
+WHERE schemaname = :'schemaname' 
+AND relname = :'relname' 
+\gset 
+\qecho Rows after: :n_dead_tup_now dead, :n_live_tup_now live 
+ 
+noticed that the first query does not end with a semicolon, as usual. This is 
+because we end it with \gset instead, which means run the query, and assign each returned 
+value to a variable having the same name as the output column. 
+ 
+ 
+Writing a conditional psql script 
+psql supports the conditional meta-commands \if, \elif, \else, and \endif. In this 
+recipe, we will demonstrate some of them. 
+ 
+conditional commands to vartest.sql resulting in the following script: 
+SELECT schemaname 
+, relname 
+, n_dead_tup 
+, n_live_tup 
+, n_dead_tup > 0 AS needs_vacuum 
+FROM pg_stat_user_tables 
+ORDER BY n_dead_tup DESC 
+LIMIT 1 
+\gset 
+\if :needs_vacuum 
+\qecho Running VACUUM on table :"relname" in schema :"schemaname" 
+\qecho Rows before: :n_dead_tup dead, :n_live_tup live 
+VACUUM ANALYZE :schemaname.:relname; 
+\qecho Waiting 1 second... 
+SELECT pg_sleep(1); 
+SELECT n_dead_tup AS n_dead_tup_now 
+, n_live_tup AS n_live_tup_now 
+FROM pg_stat_user_tables 
+WHERE schemaname = :'schemaname' AND relname = :'relname' 
+\gset 
+\qecho Rows after: :n_dead_tup_now dead, :n_live_tup_now live 
+\else 
+\qecho Skipping VACUUM on table :"relname" in schema :"schemaname" 
+\endif 
+ 
+ 
+Investigating a psql error 
+psql recognizes two variables, VERBOSITY and CONTEXT; valid values are 
+terse, default, or verbose for the former, and never, errors, or always for the latter. 
+ 
+psql recognizes two variables, VERBOSITY and CONTEXT; valid values are 
+terse, default, or verbose for the former, and never, errors, or always for the latter. 
+A more verbose error message will hopefully specify extra detail, and the context 
+information will be included. Here is an example to show the difference: 
+ 
+postgres=# \set VERBOSITY terse 
+postgres=# \set CONTEXT never 
+postgres=# select * from missingtable; 
+ERROR: relation "missingtable" does not exist at character 15 
+ 
+ 
+the extra detail you get when raising verbosity and enabling context 
+information: 
+postgres=# \set VERBOSITY verbose 
+postgres=# \set CONTEXT errors 
+postgres=# select * from missingtable; 
+ERROR: 42P01: relation "missingtable" does not exist 
+LINE 1: select * from missingtable; 
+^ 
+LOCATION: parserOpenTable, parse_relation.c:1159 
+Now you get the SQL error code 42P01, which you can look up in the PostgreSQL manual, 
+and even a reference to the file and the line in the PostgreSQL source code where this error 
+is raised so that you can investigate it 
+ 
+But in certain cases, you may hit a transient error, such as a serialization failure, which is difficult to detect itself, and it could sometimes happen that you struggle to reproduce the error, let alone analyze it. 
+ 
+\errverbose meta-command is precisely to capture information on the error without requiring any prior activity. 
+ 
+following example to understand the usage of the \errverbose metacommand.  
+ 
+1. Suppose you hit an error, as in the following query, and verbose reporting was 
+not enabled: 
+postgres=# create table wrongname(); 
+ERROR: relation "wrongname" already exists 
+2. The extra detail that is not displayed is nevertheless remembered by psql, so you 
+can view it as follows: 
+postgres=# \errverbose 
+ERROR: 42P07: relation "wrongname" already exists 
+LOCATION: heap_create_with_catalog, heap.c:1067 
+ 
+postgres=# \pset format unaligned 
+postgres=# \t on 
+postgres=# \o multi.sql 
+postgres=# SELECT format('ALTER TABLE %I.%I ADD COLUMN 
+last_update_timestamp TIMESTAMP WITH TIME ZONE;' 
+, n.nspname, c.relname ) 
+FROM pg_class c 
+JOIN pg_namespace n 
+ON c.relnamespace = n.oid 
+WHERE n.nspname = 'test' 
+AND c.relkind = 'r'; 
+\o 
+ 
+\! cat multi.sql 
+ 
+ 
+The \t command means tuples only, so keeping \t to on will ensure that there are no headers, command tags, or row counts following the results. 
+ 
+ 
+ \o FILENAME command redirects the output to a file until the subsequent \o command reverts to no redirection. 
+ 
+The \! command runs operating system commands, so \! cat will show the file contents on *nix systems. 
+ 
+The \! command runs operating system commands, so \! cat will show the file contents on *nix systems. 
+ 
+ 
+database has many large tables, then we can sort SQL statements by table size and 
+then distribute them using round-robin distribution into multiple subscripts that will have 
+approximately the same runtime. 
+ 
+\t on 
+\o script-:i.sql 
+SELECT sql FROM ( 
+SELECT format('ALTER TABLE %I.%I ADD COLUMN 
+last_update_timestamp TIMESTAMP WITH TIME ZONE 
+DEFAULT now();' , n.nspname, c.relname) as sql, 
+row_number() OVER (ORDER BY pg_relation_size(c.oid)) 
+FROM pg_class c 
+JOIN pg_namespace n 
+ON c.relnamespace = n.oid 
+WHERE n.nspname = 'test' 
+AND c.relkind = 'r' 
+ORDER BY 2 DESC) as s 
+WHERE row_number % 2 = :i; 
+\o 
+ 
+Then, we generate the two scripts, as follows: 
+$ psql -v i=0 -f make-script.sql 
+$ psql -v i=1 -f make-script.sql 
+Finally, we execute the two jobs in parallel, like this: 
+$ psql -f script-0.sql & 
+$ psql -f script-1.sql & 
+ 
+ 
+Adding/removing schemas 
+Separating groups of objects is a good way of improving administration efficiency. 
+ 
+CREATE SCHEMA sharedschema; 
+If you want that schema to be owned by a particular user, then you can add the following 
+option: 
+CREATE SCHEMA sharedschema AUTHORIZATION scarlett; 
+ 
+If you want to create a new schema that has the same name as an existing user so that the 
+user becomes the owner, then try this: 
+CREATE SCHEMA AUTHORIZATION scarlett; 
+ 
+PostgreSQL allows schemas owned by one user to have objects owned by another user within them. 
+ 
+PostgreSQL version, there isn't a CREATE OR REPLACE SCHEMA command, so when you want to create a schema, regardless of whether it already exists, you can do the following: 
+ 
+DROP SCHEMA IF EXISTS newschema; 
+CREATE SCHEMA newschema; 
+ 
+DROP SCHEMA command won't work unless the schema is empty or unless you use the 
+Nuclear option: 
+ 
+DROP SCHEMA IF EXISTS newschema CASCADE; 
+The Nuclear option kills all known germs and all your database objects (even the good 
+objects). 
+ 
+ 
+schema-level privileges 
+Privileges can be granted for objects in a schema using the GRANT command, as follows: 
+GRANT SELECT ON ALL TABLES IN SCHEMA sharedschema TO PUBLIC; 
+ 
+To move one table from its current schema to a new schema, use the following: 
+ 
+ALTER TABLE cust SET SCHEMA anotherschema; 
+ 
+If you want to move all objects, you can consider renaming the schema 
+ 
+ALTER SCHEMA existingschema RENAME TO anotherschema; 
+ 
+ 
+ 
+Every tablespace has a location assigned to it, with the exception of the pg_global and 
+pg_default default tablespaces, for shared system catalogs and all other objects, 
+respectively. 
+ 
+ 
+Temporary objects may also exist in a tablespace. These exist when users have explicitly 
+created temporary tables or there may be implicitly created data files when large queries 
+overflow their work_mem settings. 
+ 
+ 
+We can identify the tablespace of each user object using the following query: 
+SELECT spcname 
+,relname 
+,CASE WHEN relpersistence = 't' THEN 'temp ' 
+WHEN relpersistence = 'u' THEN 'unlogged ' 
+ELSE '' END || 
+CASE 
+WHEN relkind = 'r' THEN 'table' 
+WHEN relkind = 'p' THEN 'partitioned table' 
+WHEN relkind = 'f' THEN 'foreign table' 
+WHEN relkind = 't' THEN 'TOAST table' 
+WHEN relkind = 'v' THEN 'view' 
+WHEN relkind = 'm' THEN 'materialized view' 
+WHEN relkind = 'S' THEN 'sequence' 
+WHEN relkind = 'c' THEN 'type' 
+ELSE 'index' END as objtype 
+FROM pg_class c join pg_tablespace ts 
+ON (CASE WHEN c.reltablespace = 0 THEN 
+(SELECT dattablespace FROM pg_database 
+WHERE datname = current_database()) 
+ELSE c.reltablespace END) = ts.oid 
+WHERE relname NOT LIKE 'pg_toast%' 
+AND relnamespace NOT IN 
+(SELECT oid FROM pg_namespace 
+WHERE nspname IN ('pg_catalog', 'information_schema')); 
+ 
+ 
+Tablespace-level tuning 
+Since each tablespace has different I/O characteristics, we may wish to alter the planner cost 
+parameters for each tablespace. These can be set with the following command: 
+ALTER TABLESPACE new_tablespace SET (seq_page_cost = 0.05, random_page_cost = 0.1); 
+ 
+ 
+ensure that objects are created in the right place next time you create them, 
+then you can use this query: 
+SET default_tablespace = 'new_tablespace'; 
+You can run this automatically for all users that connect to a database using the following 
+query: 
+ALTER DATABASE mydb SET default_tablespace = 'new_tablespace'; 
+Take care that you do not run the following command by mistake, however: 
+ALTER DATABASE mydb SET TABLESPACE new_tablespace; 
+ 
+want to check whether any indexes are in tablespaces that are different than their parent 
+tables. Run the following to check: 
+SELECT i.relname as index_name 
+, tsi.spcname as index_tbsp 
+, t.relname as table_name 
+, tst.spcname as table_tbsp 
+FROM ( pg_class t /* tables */ 
+JOIN pg_tablespace tst 
+ON t.reltablespace = tst.oid 
+OR ( t.reltablespace = 0 
+AND tst.spcname = 'pg_default' ) 
+) 
+JOIN pg_index pgi 
+ON pgi.indrelid = t.oid 
+JOIN ( pg_class i /* indexes */ 
+JOIN pg_tablespace tsi 
+ON i.reltablespace = tsi.oid 
+OR ( i.reltablespace = 0 
+AND tsi.spcname = 'pg_default' ) 
+) 
+ON pgi.indexrelid = i.oid 
+WHERE i.relname NOT LIKE 'pg_toast%' 
+AND i.reltablespace != t.reltablespace 
+; 
+ 
+Accessing objects in other PostgreSQL databases 
+ 
+want to access data in other PostgreSQL databases. The reasons may be as follows: 
+You have more than one database server, and you need to extract data (such as 
+reference) from one server and load it into the other. 
+You want to access data that is in a different database on the same database 
+server, which was split for administrative purposes. 
+You want to perform some changes that you do not wish to rollback in the event 
+of an error or transaction abort. These are known as function side effects or 
+autonomous transactions. 
+ 
+PostgreSQL includes two separate mechanisms for accessing external PostgreSQL databases: dblink and the PostgreSQL Foreign Data Wrapper. 
+ 
+The Foreign Data Wrapper infrastructure, a mechanism to manage the definition 
+of remote connections, servers, and users, is available in all supported 
+PostgreSQL versions 
+The PostgreSQL Foreign Data Wrapper is a specific contrib extension that uses 
+the Foreign Data Wrapper infrastructure to connect to remote PostgreSQL 
+servers 
+ 
+postgres=# CREATE FOREIGN DATA WRAPPER postgresql VALIDATOR postgresql_fdw_validator; 
+CREATE FOREIGN DATA WRAPPER 
+postgres=# CREATE SERVER otherdb FOREIGN DATA WRAPPER postgresql OPTIONS (host 'foo', dbname 'otherdb', port '5432'); 
+CREATE SERVER 
+ 
+postgres=# CREATE USER MAPPING FOR PUBLIC SERVER otherdb; 
+CREATE USER MAPPING 
+ 
+connect using an unnamed connection, as follows: 
+SELECT dblink_connect('otherdb'); 
+6. This produces the following output: 
+dblink_connect 
+---------------- 
+OK 
+(1 row) 
+ 
+12. Similarly, suppose you want to execute the following query on the unnamed 
+remote connection: 
+SELECT generate_series(1,3) 
+13. We start by typing this: 
+SELECT * FROM dblink('SELECT generate_series(1,3)') 
+ 
+14. This will result in the following error: 
+ERROR: a column definition list is required for functions 
+Returning "record" 
+LINE 2: FROM dblink('SELECT generate_series(1,3)'); 
+ 
+SELECT * FROM dblink('SELECT generate_series(1,3)') AS link(col1 integer); 
+ 
+ 
+ 
+describe the second variant of this recipe, which uses the PostgreSQL Foreign 
+Data Wrapper instead of dblink: 
+1. The first step is to install the postgres_fdw contrib module, which is as 
+simple as this: 
+postgres=# CREATE EXTENSION postgres_fdw; 
+CREATE EXTENSION 
+ 
+extension automatically creates the corresponding Foreign Data Wrapper, as you can check with psql's \dew meta-command: 
+postgres=# \dew 
+List of foreign-data wrappers 
+Name | Owner | Handler | Validator 
+--------------+--------+----------------------+-------------------- 
+---- 
+postgres_fdw | gianni | postgres_fdw_handler | 
+postgres_fdw_validator 
+(1 row) 
+4. We can now define a server: 
+ 
+postgres=# CREATE SERVER otherdb FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'foo', dbname 'otherdb', port '5432'); 
+ 
+ 
+6. we can define the user mapping: 
+postgres=# CREATE USER MAPPING FOR PUBLIC SERVER otherdb; 
+ 
+we will access a portion of a remote table containing (integer, text) 
+pairs: 
+postgres=# CREATE FOREIGN TABLE ft ( 
+num int , 
+word text ) 
+SERVER otherdb 
+OPTIONS ( 
+schema_name 'public' , table_name 't' ); 
+The result is quite laconic: 
+CREATE FOREIGN TABLE 
+ 
+postgres=# select * from ft; 
+This is the output: 
+num | word 
+-----+------ 
+(0 rows) 
+8. We can insert rows as follows: 
+postgres=# insert into ft(num,word) values 
+(1,'One'), (2,'Two'),(3,'Three'); 
+9. This query produces the following output: 
+INSERT 0 3 
+10. Then, we can verify that the aforementioned rows have been inserted: 
+postgres=# select * from ft; 
+ 
+postgres_fdw extension can manage connections transparently and efficiently, so if 
+your use case does not involve commands other than SELECT, INSERT, UPDATE, and 
+DELETE, then you should definitely go for it. 
+ 
+dblink() module executes the remote query and will assemble the result set in the 
+memory before the local reply begins to be sent. This means that very large queries might 
+fail due to lack of memory, and everybody else will notice that. 
+ 
+Running slightly larger queries can be achieved using cursors. They allow us to bring the 
+answer set back in smaller chunks. 
+ 
+ 
+postgres=# SELECT dblink_open('example', 'SELECT generate_series(1,3)', true); 
+ 
+way of accessing other databases is with a tool named 
+PL/Proxy, available as a PostgreSQL extension. PL/Proxy allows you to create a local 
+database function that is a proxy for a remote database function 
+ 
+Creating a local proxy function is simple: 
+CREATE FUNCTION my_task(VOID) RETURNS SETOF text AS $$ CONNECT 'dbname=myremoteserver'; 
+SELECT my_task(); 
+$$ LANGUAGE plproxy; 
+You need a local function, but you don't need to call a remote function; you can use SQL 
+statements directly. The following example shows a parameterized function: 
+CREATE FUNCTION get_cust_email(p_username text) RETURNS SETOF text AS $$ CONNECT 'dbname=myremoteserver'; 
+SELECT email FROM users WHERE username = p_username; 
+$$ LANGUAGE plproxy; 
+ 
+ 
+CREATE FUNCTION get_cust_email(p_username text) RETURNS SETOF text AS $$ CLUSTER 'mycluster'; 
+RUN ON hashtext(p_username); 
+SELECT email FROM users WHERE username = p_username; 
+$$ LANGUAGE plproxy; 
+ 
+There are many Foreign Data Wrappers for other database systems, all of which are 
+maintained as extensions independently from the PostgreSQL project. The PostgreSQL 
+Extension Network (PGXN) 
+ 
+installed the required Oracle software as specified in the 
+oracle_fdw documentation at https:/ / github. com/ laurenz/ oracle_ fdw/ blob/ ORACLE_ 
+FDW_ 2_ 1_ 0/ README. oracle_ fdw#L503. 
+The oracle_fdw wrapper is available in the PostgreSQL Extension Network, so you can 
+follow the straightforward installation procedure described in the Installing modules from 
+PGXN section of the Adding an external module to PostgreSQL 
+ 
+ 
+the steps to follow regarding how to connect to an Oracle server using 
+oracle_fdw: 
+1. First, we ensure that the extension is loaded: 
+CREATE EXTENSION IF NOT EXISTS oracle_fdw; 
+ 
+ 
+2. Then, we configure the server and the user mapping: 
+CREATE SERVER myserv FOREIGN DATA WRAPPER oracle_fdw 
+OPTIONS (dbserver '//myhost/MYDB'); 
+CREATE USER MAPPING FOR myuser SERVER myserv; 
+3. Then, we create a PostgreSQL foreign table with the same column names as the 
+source table in Oracle, and with compatible column types: 
+CREATE FOREIGN TABLE mytab(id bigint, descr text) SERVER myserv OPTIONS (user 'scott', password 'tiger'); 
+ 
+ 
+script that lists the tables that we want to perform tasks against—something like the following: 
+ 
+postgres=# SELECT relname FROM pg_class c 
+JOIN pg_namespace n ON c.relnamespace = n.oid 
+WHERE n.nspname = 'test' AND c.relkind = 'r'; 
+ 
+postgres=# \pset format unaligned 
+postgres=# \t on 
+postgres=# \o multi.sql 
+postgres=# SELECT format('ALTER TABLE %I.%I ADD COLUMN 
+last_update_timestamp TIMESTAMP WITH TIME ZONE;' 
+, n.nspname, c.relname ) 
+FROM pg_class c 
+JOIN pg_namespace n 
+ON c.relnamespace = n.oid 
+WHERE n.nspname = 'test' 
+AND c.relkind = 'r'; 
+\o 
+ 
+\! cat multi.sql to run os command from psql  
+ 
+\! command runs operating system commands 
+ 
+\i command redirects the input from a file 
+ 
+\ir command does the same as \i; the difference is that \ir is relative to the directory 
+where the current script is, while \i is relative to the current directory 
+ 
+ 
+ 
+display the ordered wait queue for locks on session 1, as 
+follows: 
+SELECT * 
+FROM pg_stat_activity 
+WHERE pg_blocking_pids(pid) @> array[pid1] 
+ORDER BY state_change; 
+ 
+ 
+PostgreSQL, you can also set or drop default expressions, irrespective of whether the 
+NOT NULL constraints are applied: 
+ALTER TABLE foo 
+ALTER COLUMN col DROP DEFAULT; 
+ALTER TABLE foo 
+ALTER COLUMN col SET DEFAULT 'expression'; 
+ALTER TABLE foo 
+ALTER COLUMN col SET NOT NULL; 
+ALTER TABLE foo 
+ALTER COLUMN col DROP NOT NULL; 
+ 
+ 
+we can perform the entire transformation in one pass using multiple clauses on the ALTER TABLE command. So, instead, we do the following: 
+BEGIN; 
+ALTER TABLE cust 
+ALTER COLUMN firstname SET DATA TYPE text 
+USING firstname || ' ' || lastname, 
+ALTER COLUMN firstname SET NOT NULL, 
+ALTER COLUMN firstname SET DEFAULT '', 
+DROP COLUMN lastname; 
+ALTER TABLE cust RENAME firstname TO custname; 
+COMMIT; 
+ 
+ 
+ 
+Privileges can be granted for objects in a schema using the GRANT command, as follows: 
+GRANT SELECT ON ALL TABLES IN SCHEMA sharedschema TO PUBLIC; 
+However, this will only affect tables that already exist. Tables that are created in the future 
+will inherit privileges defined by the ALTER DEFAULT PRIVILEGES command, as follows: 
+ALTER DEFAULT PRIVILEGES IN SCHEMA sharedschema 
+GRANT SELECT ON TABLES TO PUBLIC; 
+ 
+ 
+ 
+ 
+Moving objects between schemas 
+Once you've created schemas for administration purposes, you'll want to move existing 
+objects to keep things tidy. 
+ 
+move one table from its current schema to a new schema, use the following: 
+ALTER TABLE cust SET SCHEMA anotherschema; 
+ 
+want to move all objects, you can consider renaming the schema itself by using the 
+following query: 
+ALTER SCHEMA existingschema RENAME TO anotherschema; 
+ 
+created your directory, adding the tablespace is simple: 
+CREATE TABLESPACE new_tablespace 
+LOCATION '/usr/local/pgsql/new_tablespace'; 
+The command to remove the tablespace is also simple and is as follows: 
+DROP TABLESPACE new_tablespace; 
+ 
+A tablespace can be dropped only when it is empty, so how do you know when a 
+tablespace is empty? 
+ 
+Tablespaces can contain both permanent and temporary objects. Permanent data objects are 
+tables, indexes, and TOAST objects. We don't need to worry too much about TOAST objects 
+because they are created and always live in the same tablespace as their main table, and 
+you cannot manipulate their privileges or ownership. 
+ 
+ 
+Temporary objects may also exist in a tablespace. These exist when users have explicitly 
+created temporary tables or there may be implicitly created data files when large queries 
+overflow their work_mem settings. These files are created according to the setting of the 
+temp_tablespaces parameter. 
+ 
+Indexes can exist in separate tablespaces as a performance option, though that requires 
+explicit specification in the CREATE INDEX statement. The default is to create indexes in the 
+same tablespace as the table to which they belong. 
+ 
+identify the tablespace of each user object using the following query: 
+SELECT spcname 
+,relname 
+,CASE WHEN relpersistence = 't' THEN 'temp ' 
+WHEN relpersistence = 'u' THEN 'unlogged ' 
+ELSE '' END || 
+CASE 
+WHEN relkind = 'r' THEN 'table' 
+WHEN relkind = 'p' THEN 'partitioned table' 
+WHEN relkind = 'f' THEN 'foreign table' 
+WHEN relkind = 't' THEN 'TOAST table' 
+WHEN relkind = 'v' THEN 'view' 
+WHEN relkind = 'm' THEN 'materialized view' 
+WHEN relkind = 'S' THEN 'sequence' 
+WHEN relkind = 'c' THEN 'type' 
+ELSE 'index' END as objtype 
+FROM pg_class c join pg_tablespace ts 
+ON (CASE WHEN c.reltablespace = 0 THEN 
+(SELECT dattablespace FROM pg_database 
+WHERE datname = current_database()) 
+ELSE c.reltablespace END) = ts.oid 
+WHERE relname NOT LIKE 'pg_toast%' 
+AND relnamespace NOT IN 
+(SELECT oid FROM pg_namespace 
+WHERE nspname IN ('pg_catalog', 'information_schema')); 
+ 
+ 
+wish to set default tablespaces for a user so that tables are automatically 
+created there by issuing the following query: 
+ALTER USER eliza SET default_tablespace = 'new_tablespace'; 
+ 
+ 
+ 
+Connect DBLINk 
+SELECT dblink_connect('otherdb'); 
+ 
+ 
+ 
+To do so, run it on the unnamed remote connection, like this: 
+postgres=# SELECT dblink_exec('INSERT INTO audit_log VALUES' || ' (current_user, now())', true); 
+ 
+ 
+we will describe the second variant of this recipe, which uses the PostgreSQL Foreign 
+Data Wrapper instead of dblink: 
+ 
+postgres_fdw contrib module, which is as simple as this: 
+postgres=# CREATE EXTENSION postgres_fdw; 
+ 
+ 
+extension automatically creates the corresponding Foreign Data Wrapper, as you can check with psql's \dew meta-command: 
+ 
+postgres=# \dew 
+List of foreign-data wrappers 
+Name | Owner | Handler | Validator 
+--------------+--------+----------------------+-------------------- 
+---- 
+postgres_fdw | gianni | postgres_fdw_handler | 
+postgres_fdw_validator 
+(1 row) 
+ 
+ 
+postgres=# CREATE SERVER otherdb FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'foo', dbname 'otherdb', port '5432'); 
+ 
+ 
+we can define the user mapping: 
+postgres=# CREATE USER MAPPING FOR PUBLIC SERVER otherdb; 
+ 
+CREATE USER MAPPING 
+ 
+ 
+postgres=# CREATE FOREIGN TABLE ft ( num int , 
+word text ) 
+SERVER otherdb 
+OPTIONS ( schema_name 'public' , table_name 't' ); 
+ 
+CREATE FOREIGN TABLE 
+ 
+postgres=# SELECT dblink_open('example', 'SELECT generate_series(1,3)', true); 
+ 
+postgres=# SELECT * FROM dblink_fetch('example', 10, true) AS link (col1 integer); 
+ 
+postgres=# SELECT dblink_close('example');  
+dblink_close 
+------------ 
+ 
+ 
+Creating a local proxy function is simple: 
+CREATE FUNCTION my_task(VOID) RETURNS SETOF text AS $$ 
+CONNECT 'dbname=myremoteserver'; 
+SELECT my_task(); 
+$$ LANGUAGE plproxy; 
+ 
+PL/Proxy is specifically designed to allow more complex architecture for sharding and load 
+balancing. 
+ 
+https:/ / github. com/ laurenz/ oracle_ fdw/ blob/ ORACLE_FDW_ 2_ 1_ 0/ README. oracle_ fdw#L503. 
+ 
+we provide the steps to follow regarding how to connect to an Oracle server using oracle_fdw: 
+ 
+we ensure that the extension is loaded: 
+CREATE EXTENSION IF NOT EXISTS oracle_fdw; 
+ 
+we configure the server and the user mapping: 
+ 
+CREATE SERVER myserv FOREIGN DATA WRAPPER oracle_fdw 
+OPTIONS (dbserver '//myhost/MYDB'); 
+ 
+Create USER MAPPING FOR myuser SERVER myserv; 
+ 
+3. Then, we create a PostgreSQL foreign table with the same column names as the source table in Oracle, and with compatible column types: 
+ 
+CREATE FOREIGN TABLE mytab(id bigint, descr text) SERVER myserv 
+OPTIONS (user 'scott', password 'tiger'); 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Chapter 8 Monitoring and Diagnosis 
+ 
+Is the database host available? Does it accept connections? 
+How much of the network bandwidth is in use? Have there been network 
+interruptions and dropped connections? 
+Is there enough RAM available for the most common tasks? How much of it is 
+left? 
+Is there enough disk space available? When will you run out of disk space? 
+Is the disk subsystem keeping up? How much more load can it take? 
+Can the CPU keep up with the load? How many spare idle cycles do the CPUs 
+have? 
+Are other network services the database access depends on (if any) available? For 
+example, if you use Kerberos for authentication, you need to monitor it as well. 
+How many context switches are happening when the database is running? 
+For most of these things, you are interested in the history; that is, how have 
+things evolved? Was everything mostly the same yesterday or last week? 
+When did the disk usage start changing rapidly? 
+For any larger installation, you probably have something already in place to 
+monitor the health of your hosts and network. 
+ 
+ 
+For alerting, one of the most widely used tools is Icinga (a fork of Nagios), an established 
+solution. The aforementioned trending tools can integrate with it. check_postgres is a 
+rather popular Icinga plugin for monitoring many standard aspects of a PostgreSQL 
+database server. 
+ 
+ 
+http://bucardo.org/wiki/Check_postgres 
+ 
+https://github.com/munin-monitoring/contrib/tree/master/plugins/postgresql. 
+ 
+ 
+CREATE EXTENSION adminpack; 
+ 
+SELECT datname, usename, client_addr, client_port, application_name FROM pg_stat_activity; 
+ 
+ 
+how to set the application name for your connections, refer to Database 
+Connection Control Functions in the PostgreSQL documentation at http:/ / www. postgresql. 
+org/ docs/ 11/ static/ libpq- connect. html. 
+ 
+ 
+to repeat it every 5 seconds. You can exit at any time by pressing Ctrl + C: 
+gabriele=> SELECT count(*) FROM pg_stat_activity; 
+count 
+------- 
+1 
+(1 row) 
+gabriele=> \watch 5 
+Watch every 5s Tue Aug 27 21:47:24 2013 
+count 
+------- 
+1 
+(1 row) 
+ 
+ 
+ 
+To see which connected users are running at this moment, just run the following code: 
+SELECT datname, usename, state, query FROM pg_stat_activity; 
+ 
+SELECT datname, usename, state, query FROM pg_stat_activity WHERE state = 'active'; 
+ 
+ 
+To get a list 
+of running queries ordered by how long they have been executing, use the following code: 
+SELECT 
+current_timestamp - query_start AS runtime,datname, usename, query 
+FROM pg_stat_activity WHERE state = 'active' 
+ORDER BY 1 DESC; 
+ 
+ 
+On busy systems, you may want to limit the set of queries that are returned to only the first 
+few queries (add LIMIT 10 at the end) or only the queries that have been running over a 
+certain period of time. For example, to get a list of queries that have been running for more 
+than a minute, use the following query: 
+ 
+SELECT current_timestamp - query_start AS runtime, 
+datname, usename, query FROM pg_stat_activity 
+WHERE state = 'active' AND current_timestamp - query_start > '1 min' ORDER BY 1 DESC; 
+ 
+ 
+Follow these steps to check if a query is waiting for another query: 
+ 
+SELECT datname, usename, wait_event_type, wait_event, backend_type, Query FROM pg_stat_activity WHERE wait_event_type IS NOT NULL AND wait_event_type NOT IN ('Activity', 'Client'); 
+ 
+ 
+PostgreSQL provides a version of the pg_stat_activity view that's capable of capturing 
+many kinds of waits; however, in older versions, pg_stat_activity could only detect 
+waits on locks such as those placed on SQL objects, via the pg_stat_activity.waiting field. 
+ 
+ 
+SELECT datname, usename, wait_event_type, wait_event, 
+pg_blocking_pids(pid) AS blocked_by, backend_type, query 
+FROM pg_stat_activity WHERE wait_event_type IS NOT NULL 
+AND wait_event_type NOT IN ('Activity', 'Client'); 
+ 
+ 
+Using statement_timeout to clean up queries that take 
+too long to run 
+ 
+ 
+queries running longer than a given time. 
+Maybe your web frontend just refuses to wait for more than 10 seconds for a query to 
+complete and returns a default answer to users if it takes longer, abandoning the query. 
+In such a case, it might be a good idea to set statement_timeout = 10 sec, either in 
+postgresql.conf or as a per-user or per-database setting 
+ 
+postgres=# SET statement_timeout TO '3 s'; 
+SET 
+postgres=# SELECT pg_sleep(10); 
+ERROR: canceling statement due to statement timeout 
+ 
+ 
+can use the following query to kill all backends that have an open transaction but have 
+been doing nothing for the last 10 minutes: 
+SELECT pg_terminate_backend(pid) 
+FROM pg_stat_activity 
+WHERE state = 'idle in transaction' 
+AND current_timestamp - query_start > '10 min'; 
+ 
+ 
+look up the pg_locks table for those entries with an empty pid value. Run the following query: 
+ 
+SELECT t.schemaname || '.' || t.relname AS tablename, l.pid, l.granted 
+FROM pg_locks l JOIN pg_stat_user_tables t ON l.relation = t.relid; 
+ 
+ 
+ 
+reset all table statistics by executing the following command: 
+SELECT pg_stat_reset(); 
+ 
+ 
+PostgreSQL does not have any built-in last used information about tables, so you have to 
+use other means to figure it out. 
+ 
+ 
+ 
+PL/pgSQL function looks for the table's data files to get the value of their last access and modification times: 
+ 
+CREATE OR REPLACE FUNCTION table_file_access_info( 
+IN schemaname text, IN tablename text, 
+OUT last_access timestamp with time zone, 
+OUT last_change timestamp with time zone 
+) LANGUAGE plpgsql AS $func$ 
+DECLARE 
+tabledir text; 
+filenode text; 
+BEGIN 
+SELECT regexp_replace( 
+current_setting('data_directory') || '/' || 
+pg_relation_filepath(c.oid), 
+pg_relation_filenode(c.oid) || '$', ''), 
+pg_relation_filenode(c.oid) 
+INTO tabledir, filenode 
+FROM pg_class c 
+JOIN pg_namespace ns 
+ON c.relnamespace = ns.oid 
+AND c.relname = tablename 
+AND ns.nspname = schemaname; 
+RAISE NOTICE 'tabledir: % - filenode: %', tabledir, filenode; 
+-- find latest access and modification times over all segments 
+SELECT max((pg_stat_file(tabledir || filename)).access), 
+max((pg_stat_file(tabledir || filename)).modification) 
+INTO last_access, last_change 
+FROM pg_ls_dir(tabledir) AS filename 
+-- only use files matching <basefilename>[.segmentnumber] 
+WHERE filename ~ ('^' || filenode || '([.]?[0-9]+)?$'); 
+END; 
+$func$; 
+ 
+ 
+Here is the sample output: 
+postgres=# select * from table_file_access_info('public','job_status'); 
+ 
+ 
+table_file_access_info(schemaname, tablename) function returns the last 
+access and modification times for a given table, using the filesystem as a source of 
+information 
+ 
+You can definitely improve and personalize the preceding function. I advise that you look 
+at the PostgreSQL documentation and read about two built-in functions, 
+pg_ls_dir(dirname text) and pg_stat_file(filename text). 
+ 
+ 
+SELECT datname, temp_files, temp_bytes, stats_reset 
+FROM pg_stat_database; 
+The pg_stat_database view holds very important statistics. I recommend that you look 
+at the official documentation at 
+http://www.postgresql.org/docs/11/static/monitoring-stats.html#PG-STAT-DATABASE 
+-VIEW 
+ 
+ 
+ANALYZE command updates statistics about data size and data distribution in all tables. 
+If a table size has changed significantly without its statistics being updated, then PostgreSQL's statistics-based optimizer may choose a bad plan. Manually running the ANALYZE command updates the statistics for all tables. 
+ 
+ 
+If you suspect that some tables may contain bloat, then run the following query: 
+ 
+SELECT pg_relation_size(relid) AS tablesize,schemaname,relname,n_live_tup FROM pg_stat_user_tables 
+WHERE relname = <tablename>; 
+ 
+ 
+ 
+If you suspect a data corruption bug and feel adventurous, then you can read about data 
+formats at http://www.postgresql.org/docs/current/static/storage.html, and 
+investigate your data tables using the pageinspect package from contrib. 
+ 
+ 
+typical default setup will divert log messages to stderr, and you can set up log rotation 
+directly in PostgreSQL through the log_rotation_age configuration option 
+ 
+how to do so using pgBadger, a multi-platform application 
+written in Perl that has recently become more popular than its famous predecessor, 
+pgFouine. 
+Some of the cool features of pgBadger include multi-file processing, parallel processing, 
+auto-detection of the input format, on-the-fly decompression, as well as very light HTML 
+reports 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+#!/bin/bash 
+outdir=/var/www/reports 
+begin=$(date +'%Y-%m-%d %H:00:00' -d '-1 day') 
+end=$(date +'%Y-%m-%d %H:00:00') 
+outfile="$outdir/daily-$(date +'%H').html" 
+pgbadger -q -b "$begin" -e "$end" -o "$outfile" \ 
+/var/log/postgres.log.1 /var/log/postgres.log 
+The preceding script informs pgbadger to analyze the current log file 
+(/var/log/postgresql.log) and the previously rotated file 
+(/var/log/postgres.log.1), to limit the reporting activity to the last 24 hours (see how 
+the date command was used to generate timestamps), and then write the output to the 
+$outfile HTML file. 
+ 
+ 
+Analyzing the real-time performance of your queries 
+The pg_stat_statements extension adds the capability to track execution statistics of 
+queries that are run in a database, including the number of calls, total execution time, total 
+number of returned rows, and internal information on memory and I/O access. 
+ 
+pg_stat_statements module is available as a contrib module of PostgreSQL. 
+ 
+shared_preload_libraries = 'pg_stat_statements' 
+This change requires restarting the PostgreSQL server. 
+ 
+order to use it, the extension must be installed in the desired database through 
+the usual CREATE EXTENSION command (run as a superuser): 
+gabriele=# CREATE EXTENSION pg_stat_statements; 
+ 
+Alternatively, you can retrieve the queries with the highest average execution time: 
+SELECT query, total_time/calls AS avg, calls 
+FROM pg_stat_statements ORDER BY 2 DESC; 
+These are just examples. I strongly recommend that you look at the PostgreSQL 
+documentation at http://www.postgresql.org/docs/44/static/pgstatstatements.html 
+ 
+ 
+read access to the pg_stat_statements view is granted to every user who can 
+access the database (even though standard users are only allowed to see the SQL statements 
+of their queries). 
+The pg_stat_statements_reset() function can be used to discard the statistics 
+collected by the server up to that moment, and set all the counters to 0. It requires a 
+superuser in order to be run. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+PostgreSQL provides a utility command named VACUUM, which is a jokey name for a 
+garbage collector that sweeps up all of the bad things and fixes them—or at least, most of 
+them. 
+ 
+VACUUM performs a range of cleanup activities, some of them too complex to describe 
+without a whole sideline into their internals. 
+ 
+PostgreSQL DBAs will prefer to execute their own VACUUM commands, 
+though autovacuum now provides a fine degree of control, which—if enabled and 
+controlled—can save much of your time. Using both manual and automatic vacuuming 
+gives you control and a safety net. 
+ 
+ 
+Controlling automatic database 
+maintenance 
+Autovacuum is enabled by default in PostgreSQL and mostly does a great job of 
+maintaining your PostgreSQL database. 
+ 
+What are the best times of day to do things? When are system resources more available? 
+Which days are quiet, and which are not? 
+Which tables are critical to the application, and which are not? 
+ 
+Check that you have the following parameters enabled in your postgresql.conf file: 
+autovacuum = on 
+track_counts = on 
+ 
+postgresql.conf to tune the VACUUM command: 
+vacuum_cleanup_index_scale_factor 
+vacuum_cost_delay 
+vacuum_cost_limit 
+vacuum_cost_page_dirty 
+vacuum_cost_page_hit 
+vacuum_cost_page_miss 
+vacuum_defer_cleanup_age 
+vacuum_freeze_min_age 
+vacuum_freeze_table_age 
+vacuum_multixact_freeze_min_age 
+vacuum_multixact_freeze_table_age 
+ 
+There are also parameters that apply specifically to the autovacuum process: 
+ 
+autovacuum 
+autovacuum_analyze_scale_factor 
+autovacuum_analyze_threshold 
+autovacuum_freeze_max_age 
+autovacuum_max_workers 
+autovacuum_multixact_freeze_max_age 
+autovacuum_naptime 
+autovacuum_vacuum_cost_delay 
+autovacuum_vacuum_cost_limit 
+autovacuum_vacuum_scale_factor 
+autovacuum_vacuum_threshold 
+ 
+ 
+autovacuum_work_mem 
+log_autovacuum_min_duration 
+ 
+ 
+autovacuum is set, then it will wake up every autovacuum_naptime seconds, and 
+decide whether to run VACUUM, ANALYZE, or both (don't modify that). 
+ 
+A toast table is the location where the oversized column values get placed, which the documents refer to as supplementary storage tables. If there are no oversized values, then the toast table will occupy little space. Tables with very wide values often have large toast tables. TOAST (short for The 
+Oversized Attribute Storage Technique) is optimized for UPDATE. 
+ 
+If you have a heavily updated table, the toast table is untouched, so it may make sense to turn off autovacuuming for the toast table, as follows: 
+ 
+ALTER TABLE pgbench_accounts SET ( toast.autovacuum_enabled = off); 
+ 
+Note that autovacuuming of the toast table is performed completely separately from the main table, even though you can't ask for an explicit include or exclude of the toast table yourself when running VACUUM. 
+ 
+Use the following query to display the reloptions for tables and their toast tables: 
+postgres=# 
+SELECT n.nspname 
+, c.relname 
+, array_to_string( 
+c.reloptions || 
+ARRAY( 
+SELECT 'toast.' || x 
+FROM unnest(tc.reloptions) AS x 
+), ', ') 
+AS relopts 
+FROM pg_class c 
+LEFT JOIN pg_class tc ON c.reltoastrelid = tc.oid 
+JOIN pg_namespace n ON c.relnamespace = n.oid 
+WHERE c.relkind = 'r' 
+AND nspname NOT IN ('pg_catalog', 'information_schema'); 
+ 
+ 
+This can be used to maintain multiple sets of files for the autovacuum configuration. Let's 
+say we have a website that is busy mainly during the daytime, with some occasional 
+nighttime use. We decide to have two profiles, one for daytime, when we want less 
+aggressive autovacuuming, and another at night, where we can allow more aggressive 
+vacuuming: 
+1. You need to add the following lines to postgresql.conf: 
+autovacuum = on 
+autovacuum_max_workers = 3 
+include 'autovacuum.conf' 
+2. Remove all other autovacuum parameters. 
+3. Then, create a file named autovacuum.conf.day that contains the following 
+parameters: 
+autovacuum_analyze_scale_factor = 0.1 
+autovacuum_analyze_threshold = 50 
+autovacuum_vacuum_cost_delay = 30 
+autovacuum_vacuum_cost_limit = -1 
+autovacuum_vacuum_scale_factor = 0.2 
+autovacuum_vacuum_threshold = 50 
+4. Then, create another file, named autovacuum.conf.night, that contains the 
+following parameters: 
+autovacuum_analyze_scale_factor = 0.05 
+autovacuum_analyze_threshold = 50 
+autovacuum_vacuum_cost_delay = 10 
+autovacuum_vacuum_cost_limit = -1 
+autovacuum_vacuum_scale_factor = 0.1 
+autovacuum_vacuum_threshold = 50 
+5. To swap profiles, simply do the following: 
+$ ln -sf autovacuum.conf.night autovacuum.conf 
+$ pg_ctl reload 
+ 
+ 
+Avoiding auto-freezing and page corruptions 
+ 
+PostgreSQL uses internal transaction identifiers that are 4 bytes long, so we only have 
+232 transaction IDs (about four billion). 
+ 
+PostgreSQL starts again from the beginning when that wraps around, allocating new identifiers in a circular manner. The reason we do this is that moving to an 8-byte identifier has various other negative effects and costs that we would rather not pay, so we keep the 4-byte transaction identifier, which means we need to do regular sweeps to replace old transaction identifiers with a special value that is not interpreted in a circular way, which is called frozen transaction ID; that's why this 
+procedure is known as freezing. 
+ 
+Freezing takes place when a transaction identifier on a row becomes more than 
+vacuum_freeze_min_age transactions older than the current next value. Normal VACUUM 
+operations will perform a small amount of freezing as you go, and in most cases, you won't 
+notice that at all. 
+The VACUUM command is normally optimized to only look at the chunks of a table that 
+require cleaning, both for normal vacuum and freezing operations. 
+ 
+The VACUUM command is also an efficient way to confirm the absence of page corruptions, 
+so it is worth scanning the whole database, block-by-block, from time to time. 
+VACUUM (DISABLE_PAGE_SKIPPING); 
+Removing issues that cause bloat 
+Bloat can be caused by long-running queries or long-running write transactions that 
+execute alongside write-heavy workloads. Resolving that is mostly down to understanding 
+the workloads running on the server. 
+SELECT now() - 
+CASE 
+WHEN backend_xid IS NOT NULL 
+THEN xact_start 
+ELSE query_start END 
+AS age 
+, pid 
+, backend_xid AS xid 
+, backend_xmin AS xmin 
+, state FROM pg_stat_activity WHERE backend_type = 'client backend' ORDER BY 1 DESC; 
+ 
+you have sessions stuck in idle in transaction state, then you may want to consider setting 
+the idle_in_transaction_session_timeout parameter so that transactions in that 
+mode will be canceled. 
+ 
+Locks 
+SELECT l.locktype, x.database, l.relation, l.page,l.tuple,l.classid, l.objid, l.objsubid, l.mode, x.transaction, x.gid, 
+x.prepared, x.owner FROM pg_locks l JOIN pg_prepared_xacts x ON l.virtualtransaction = ‘-1/' || 
+x.transaction::text; 
+ 
+SELECT DISTINCT x.database, l.relation FROM pg_locks l JOIN pg_prepared_xacts x ON l.virtualtransaction = ‘-1/' || x.transaction::text WHERE l.locktype != ‘transactionid'; 
+ 
+full list of tables to vacuum and a list of their indexes by using the following query: 
+ 
+SELECT relname, pg_relation_size(oid) FROM pg_class WHERE relkind in ('i','r') AND relnamespace = 'pg_catalog'::regnamespace ORDER BY 2 DESC; 
+ 
+Bloated tables and indexes are a natural consequence of MVCC design in PostgreSQL. It is 
+caused mainly by updates, as we must retain both the old and new updates for a certain 
+period of time. 
+ 
+The following query is useful in 
+investigating the index size and how it changes over time. It runs fairly quickly, and can be 
+used to monitor whether your indexes are changing in size over time: 
+SELECT 
+nspname,relname, 
+round(100 * pg_relation_size(indexrelid) / 
+pg_relation_size(indrelid)) / 100 
+AS index_ratio, 
+pg_size_pretty(pg_relation_size(indexrelid)) 
+AS index_size, 
+pg_size_pretty(pg_relation_size(indrelid)) 
+AS table_size 
+FROM pg_index I 
+LEFT JOIN pg_class C ON (C.oid = I.indexrelid) 
+LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace) 
+WHERE 
+nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast') AND 
+C.relkind='i' AND 
+pg_relation_size(indrelid) > 0; 
+ 
+select * from pgstattuple_approx('pgbench_accounts'); 
+ 
+scan indexes using pgstatindex(), as follows: 
+postgres=> SELECT * FROM pgstatindex('pg_cast_oid_index'); 
+ 
+maintenance_work_mem should be set to anything up to 1 GB, according to how much 
+memory you can allocate to this task at this time. 
+ 
+the vacuum_cleanup_index_scale_factor parameter, which can also be set 
+at table-level if needed. The default value seems good in this instance. 
+ 
+ 
+VACUUM works in three phases: 
+ 
+The first main phase is scanning heap 
+ 
+the second phase, where we start vacuuming indexes 
+ 
+indexes have been vacuumed, we move onto the third phase, where we 
+return to the vacuuming heap. 
+ 
+The value of max_dead_tuples is defined by the setting of maintenance_work_mem. 
+ 
+If num_dead_tuples reaches the limit of max_dead_tuples, then we repeat phases two and three until complete. Each iteration will increment index_vacuum_count. 
+ 
+The amount of parallelism will be directly controlled by the setting of a table's parallel_workers 
+parameter. 
+ 
+To find index not used 
+======================= 
+SELECT schemaname, relname, indexrelname, idx_scan FROM pg_stat_user_indexes ORDER BY idx_scan; 
+ 
+low number for idx_scan, then it might be that the index was newly created (as was the case in my preceding demonstration), or that the index is only used by a part of the application that runs only at certain times of the day, week,month 
+ 
+SELECT ir.relname AS indexname , it.relname AS tablename, n.nspname AS schemaname FROM pg_index i 
+JOIN pg_class ir ON ir.oid = i.indexrelid JOIN pg_class it ON it.oid = i.indrelid JOIN pg_namespace n ON n.oid = it.relnamespace WHERE NOT i.indisvalid; 
+ 
+Chapter 10 Performance and Concurrency 
+ 
+Performance and concurrency are two problems that are often tightly coupled—when 
+concurrency problems are encountered, performance usually degrades, and 
+in some cases, a lot. If you take care of concurrency problems, you will achieve 
+better performance. 
+ 
+ 
+Finding slow SQL statements 
+ 
+There are two main kinds of slowness that can manifest themselves in a database. 
+ 
+The first kind is a single query that can be too slow to be really usable, such as a customer 
+information query in a CRM running for minutes, a password check query running in tens 
+of seconds, or a daily data aggregation query running for more than a day. 
+ 
+The second kind is a query that is run frequently (say a few thousand times a second) and 
+used to run in single-digit milliseconds, but is now running in several tens or even 
+hundreds of milliseconds, hence slowing the system down. 
+ 
+postgres=# \x 
+postgres=# \dx pg_stat_statements 
+ 
+ 
+top ten highest workloads on your server side: 
+ 
+postgres=# SELECT calls, total_time, query FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10; 
+ 
+pg_stat_statements collects data on all running queries by accumulating data in 
+memory, producing minimal overheads. 
+ 
+Another way to find slow queries is to set up PostgreSQL to log them all. So, if you decide 
+to monitor a query that takes over 10 seconds, then set up logging queries over 10 seconds 
+by executing the following command: 
+ 
+postgres=# ALTER SYSTEM SET log_min_duration_statement = 10000; 
+ 
+Why queries can be slow 
+ 
+In more detail, the main reasons are as follows: 
+Returning too much data 
+Processing too much data index needed 
+Wrong plan for other reasons 
+Cache or I/O problems 
+Locking problems 
+ 
+Returning too much data 
+ 
+EXPLAIN command provides output to describe the execution plan of the SQL, 
+showing access paths and costs (in abstract units). The ANALYZE option causes the 
+statement to be executed (be careful), with instrumentation to show the number of rows 
+accessed and the timings for that part of the plan. 
+ 
+BUFFERS option provides information about the number of database buffers read and the number of buffers that were hit in the cache. 
+ 
+In pg_stat_user_tables,  fast growth of seq_tup_read means that there are 
+lots of sequential scans occurring.  
+ 
+The ratio of seq_tup_read to seq_scan shows how many tuples each seqscan reads.  
+ 
+Similarly, the idx_scan and idx_tup_fetch columns show whether indexes are being used and how effective they are. 
+ 
+In pg_statio_user_tables, watch the heap_blks_hit and heap_blks_read fields, or the equivalent ones for index and toast relations. 
+ 
+EXPLAIN options 
+Use the FORMAT option to retrieve the output of EXPLAIN in a different format, such as 
+JSON, XML, and YAML. This could allow us to write programs to manipulate the outputs. 
+ 
+EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT count(*) FROM t; 
+PostgreSQL documentation at http://www.postgresql.org/docs/11/static/sqlexplain.html 
+ 
+We have included an example extension, called pgstatslog. It can be used to track these 
+changes. The extension works on PostgreSQL 9.1+. 
+ 
+collect information by executing the following query for each database that you 
+intend to monitor: 
+SELECT collect_deltas(); 
+ 
+ 
+you can add the following (or a similar variation) to the postgres user's cron table: 
+*/5 * * * * /usr/bin/psql -c 'SELECT collect_deltas()' mydbname 
+ 
+ 
+ 
+Speeding up queries without rewriting them 
+ 
+Increasing work_mem 
+For queries involving large sorts or for join queries, it may be useful to increase the amount 
+of working memory that can be used for query execution. Try setting the following: 
+SET work_mem = '1TB'; 
+ 
+Remember to increase maintenace_work_mem when creating indexes or adding foreign 
+keys, rather than work_mem. 
+ 
+ 
+PostgreSQL 9.2 introduced a new plan type: index-only scans. This allows you to utilize a 
+technique known as covering indexes. If all of the columns requested by the SELECT list of 
+a query are available in an index, that particular index is a covering index for that query. 
+ 
+This technique allows PostgreSQL to fetch valid rows directly from the index, without 
+accessing the table (heap), so performance improves significantly 
+ 
+ 
+This technique allows PostgreSQL to fetch valid rows directly from the index, without 
+accessing the table (heap), so performance improves significantly. 
+ 
+ 
+There are many types of indexes in Postgres, so you may find that there are multiple types 
+of indexes that can be used for a particular task and many options to choose from: 
+Identifier data: BTREE and HASH 
+Text data: GIST and GIN 
+JSONB or XML data: GIN 
+Time-range data: BRIN 
+Geographical data: BRIN, GIST, and SP-GIST 
+ 
+ 
+ 
+index access may still not be very efficient if the 
+values that are accessed by the index are distributed randomly, all over the table. If you 
+know that some fields are likely to be accessed together, then cluster the table on an index 
+defined on those fields ---- cluster factor in the index 
+ 
+In case of many updates, set fillfactor on the table 
+If you often update only some tables and can arrange your query/queries so that you don't 
+change any indexed fields, then setting fillfactor to a lower value than the default of 
+100 for those tables enables PostgreSQL to use Heap-Only Tuples (HOT) updates, which 
+can be an order of magnitude faster than ordinary updates. 
+ 
+Changing random_page_cost allows you to react to whether data is on disk or in memory. 
+Letting the optimizer know that more of an index is in the cache will help it to understand 
+that using the index is actually cheaper. 
+ 
+Index scan performance for larger scans can also be improved by allowing multiple 
+asynchronous I/O operations by increasing effective_io_concurrency. Both 
+random_page_cost and effective_io_concurrency can be set for specific tablespaces, 
+or for individual queries. 
+ 
+By setting the max_parallel_workers_per_gather parameter, we've improved 
+performance using parallel query. 
+ 
+ 
+In PostgreSQL 9.6 and 10, parallel query only works for read-only queries, so only SELECT 
+statements that do not contain the FOR clause (for example, SELECT ... FOR UPDATE). 
+ 
+Parallel query is enabled by setting max_parallel_workers_per_gather to a value higher than zero. This parameter specifies the maximum number of additional processes that are available, if needed. So, a 
+setting of 1 will mean you have the leader process plus one additional worker process, so 
+two processes in total. 
+ 
+MPP parallel queries are much faster than single node parallel queries. The project 
+has been running for many years now and provides a fully functional version of Postgres 
+that's aimed at larger and/or more scalable workloads. 
+ 
+ 
+If you have a huge table and a query to select only a subset of that table, then you may wish 
+to use a BRIN index (block range index). These indexes give performance improvements 
+when the data is naturally ordered as it is added to the table, such as logtime columns or a 
+naturally ascending OrderId column. 
+ 
+INSERTs into BRIN indexes are specifically designed to not slow down 
+as the table gets bigger, so they perform much better than B-tree indexes. 
+¬¬ 
+CREATE TABLE measurement ( 
+logtime TIMESTAMP WITH TIME ZONE NOT NULL, 
+measures JSONB NOT NULL); 
+CREATE INDEX ON measurement USING BRIN (logtime); 
+ 
+ 
+Using optimistic locking 
+ 
+If you perform work in one long transaction, the database will lock rows for long periods of 
+time. Long lock times often result in application performance issues because of long lock 
+waits: 
+ 
+Optimistic locking assumes that others don't update the same record, and checks this at 
+update time, instead of locking the record for the time it takes to process the information on 
+the client side. 
+ 
+The default transaction isolation level in PostgreSQL is read committed, but you can choose 
+from two more levels, repeatable read and serializable, if you require stricter control over 
+visibility of data within a transaction; 
+see http://www.postgresql.org/docs/11/static/transaction-iso.html for more 
+information. 
+ 
+ 
+ 
+ 
+
