@@ -1,0 +1,103 @@
+
+Brief Summary of a Raw 10046 Extended Trace File’s Contents 
+
+Oracle’s 10046 extended trace files contain a large number of keywords that help determine what 
+operations a session is performing, and the delays present while performing those operations. The 
+following are many of the useful keywords found in 10046 extended trace files: 
+
+len: Number of characters in the SQL statement. 
+
+dep: Indicates the application/trigger depth at which the SQL statement was 
+executed. dep=0 indicates that it was executed by the client application. dep=1
+indicates that the SQL statement was executed by a trigger, the Oracle 
+optimizer, or a space management call. dep=2 usually indicates that the SQL 
+statement was called from a trigger but also may appear in situations where a 
+hard parse is required during space management activities. dep=3 usually 
+indicates that the SQL statement was called from a trigger that was called from 
+a trigger. (Hard parses during space management activities or hard parses of 
+SQL statements in triggers could also generate dep=3 calls.) 
+
+oct: Identifies the Oracle command type, which is related to the 
+V$SESSION.COMMAND column and the V$SQL.COMMAND_TYPE column. Common 
+command type values include: 1 = create table, 2 = insert, 3 = select, 6 = update, 
+7 = delete, and 9 = create index. See the “Command Column of V$SESSION and 
+Corresponding Commands” table in the Oracle Reference documentation 
+(Table 8-2 in the Oracle Database Reference 11g Release 2 book) for a complete 
+list of command types. 
+
+hv: Identifies the SQL hash value of the SQL statement in the various SQLrelated views (V$SQL, V$SQL_PLAN, V$SQL_PLAN_STATISTICS, V$SQL_OPTIMIZER_ENV, 
+V$SQL_SHARED_CURSOR, and so forth). Use with the SQL address found in the ad=
+statistic.
+
+ad: Identifies the SQL address of the SQL statement in the various SQL-related 
+views. Use with the SQL hash value found in the hv= statistic or the sqlid.
+
+sqlid: Output in Oracle 11.1 and above trace files that identifies the SQL_ID
+found in various views in Oracle 10.1 and above. 
+
+tim: Timestamp measured in 1/1,000,000 of a second (some Unix platforms 
+cheat through a bit-shifting function, where the divisor is actually 220, or 
+1,048,576). The tim statistic may be used to track the progress in the 10046 trace 
+file by taking the delta value of the most recent tim, subtracting the first tim, 
+and dividing the result by 1,000,000 to arrive at the number of seconds into the 
+trace file. Some platforms, such as Oracle 10.2 on Windows, use a 32-bit value 
+(even on 64-bit Windows) for the tim statistic, which causes the statistic to wrap 
+around zero roughly once every 71 minutes and 35 seconds. 
+
+c: CPU time. The amount of CPU resources required at that point in the 
+execution. On 8.1.7.4 and earlier releases, divide by 100 to obtain the number of 
+seconds. For releases after 8.1.7.4, divide by 1,000,000 to obtain the number 
+of seconds.
+
+e: Elapsed time. The number of seconds as measured by a high-precision clock 
+at that point in the execution. This may be significantly different from CPU 
+seconds. On 8.1.7.4 and earlier releases, divide by 100 to obtain the number of 
+seconds. For releases after 8.1.7.4, divide by 1,000,000 to obtain the number of 
+seconds. 
+p: Physical blocks read from disk, which may be read one block at a time or as 
+part of a multiblock read. 
+cr: Consistent reads of blocks, possibly requiring the application of undo blocks 
+so that a block may be rolled back to a specific SCN number (the specific SCN is 
+partially based on the isolation level set for the session). The cr statistic in a 
+trace file relates to the consistent gets statistic in V$SYSSTAT and V$SESSTAT. 
+cu: Current mode reads of blocks, which contain committed and uncommitted 
+data. Blocks of this type are often required as block contents are modified 
+through inserts, updates, and deletes. The cu statistic in a trace file relates to the 
+db block gets statistic in V$SYSSTAT and V$SESSTAT. 
+mis: Number of library cache misses at that stage of execution for the SQL 
+statement. When a 10046 trace is first enabled for a session, previously hardparsed SQL statements may need to be reparsed on the next access, which may 
+then provide misleading information about the frequency of hard parses within 
+the session. 
+r: Number of rows returned by the call. 
+og: Optimizer goal—1 = ALL_ROWS, 2 = FIRST_ROWS (and FIRST_ROWS_n), 3 = RULE, 4
+= CHOOSE. 
+XCTEND rlbk=0: Indicates that the client issued a COMMIT, and if this is followed 
+by rd_only=1, it indicates that no information changed in the database as a 
+result of the COMMIT. rlbk=1 indicates that the session performed a ROLLBACK, 
+rather than a COMMIT. 
+ela: Elapsed time in 1/100 of a second for releases 8.1.7.4 and earlier, and in 
+1/1,000,000 of a second for releases after 8.1.7.4. 
+p1: The meaning of this statistic depends on the wait event; see 
+V$EVENT_NAME.PARAMETER1. On Oracle 10.1 and above, the actual meaning of the 
+p1 parameter from V$EVENT_NAME.PARAMETER1 appears in the trace file, rather 
+than the identifier p1. 
+p2: The meaning of this statistic depends on the wait event; see 
+V$EVENT_NAME.PARAMETER2. On Oracle 10.1 and above, the actual meaning of the 
+p2 parameter from V$EVENT_NAME.PARAMETER2 appears in the trace file, rather 
+than the identifier p2. 
+p3: The meaning of this statistic depends on the wait event; see 
+V$EVENT_NAME.PARAMETER3. On Oracle 10.1 and above, the actual meaning of the 
+p3 parameter from V$EVENT_NAME.PARAMETER3 appears in the trace file, rather 
+than the identifier p3. 
+
+
+STAT lines: The row source execution plan. 
+1. id: Line identifier in the execution plan, used to identify child operations. 
+2. cnt: Number of rows returned or processed. 
+3. pid: Parent operation line identifier, used to determine indentation of the 
+plan based on the indentation of the parent operation line identifier. 
+4. obj: Object ID of the object referenced at the stage of the plan. When the 
+object name does not appear on a STAT line (or on a WAIT line), query 
+DBA_OBJECTS for a matching value in the OBJECT_ID column to locate the 
+owner, object name, and object type (and in some cases the subobject 
+name). 
