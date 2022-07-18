@@ -1,0 +1,178 @@
+
+Overview of the Chapter
+The chapter provides a perspective on the role of relational databases in software development and its performance issues during software maintenance. During the 1970s 
+two major innovations appeared in the software industry:
+
+• Introduction of relational databases as an improvement over the files and nonrelational databases, both of which were cumbersome to use, and
+• Structured methodology that later became known as the software development life cycle process.
+
+E.F. Codd was the inventor of the former and several contributors such as Yourdon
+and Constantine, Gane and Sarson, and Jackson formulated the latter. Database development is an integral part of the software development life cycle (SDLC) and software
+maintenance life cycle (SMLC). It consists of five phases, the first four of which encompass SDLC and the last one occurs under SMLC. 
+
+
+The first commercially available
+relational database management system (RDBMS) was INGRES, marketed in 1979 by
+Relational Technology, Inc. This was followed shortly by ORACLE, marketed in the
+same year by Relational Software, Inc., which was later renamed Oracle Corporation.
+
+
+
+Software Development Life Cycle (SDLC)
+Under this methodology an application development consists of five distinct phases, as described below (see [9]):
+(a) Problem definition and feasibility study,
+(b) Requirements analysis,
+(c) Preliminary system design,
+(d) Detailed system design, and
+(e) System implementation, maintenance, and evaluation.
+
+
+These five phases are grouped into three logical categories: 
+analysis consisting of (a)and (b), 
+design consisting of (c) and (d), and 
+implementation consisting of (e) alone.
+
+These five phases are grouped into three logical categories: analysis consisting of (a)
+and (b), design consisting of (c) and (d), and implementation consisting of (e) alone.
+
+The analysis category is guided by the keyword WHAT, i.e., what functions will the
+application provide for the end users. Its end product consists of a logical system specification (also called functional requirements document) 
+that describes in detail the tasks that end users will be able to do when the system becomes operational.
+
+
+Various technologies have appeared since then such as object-oriented design and programming, first two-tier and then
+n-tier (n > 2) client server architecture, Web-based design, event-driven programming instead of logic-driven programming, etc.
+
+The main differences between SDLC and SMLC arise from the focus: SMLC operates with an existing application, whereas SDLC builds a new application. The salient
+points of difference are listed below.
+• An SMLC job is initiated by a software maintenance request form, whereas an
+SDLC job starts as a new application development.
+• SMLC deals with a code and a database that are already in existence and need modification, whereas SDLC involves a new code and database.
+• The analysis and design phases of SDLC are much longer and require in-depth discussion with the end users, whereas they are much simpler in SMLC.
+
+
+
+The analysis and design phases of the SDLC and SMLC result in the following database tasks,
+(a) Enterprise modeling,
+(b) Logical database design,
+(c) Physical database design,
+(d) Database implementation, and
+(e) Database maintenance.
+
+
+The starting point of any data modeling is a pool of data elements that are collected during the analysis phase of the SDLC. They are gathered from source documents such as
+data entry forms, data entry screen captures, and reports, and also during the interviews
+with the end users as a part of the requirements collection process.
+
+
+Step 1: Identify as much as possible the primitive data elements and decompose the
+group level data elements into their component primitive data elements.
+
+1.3.1 Entity, Relationship, and Attribute
+The next task is to bring order into this data pool chaos by grouping the data into separate
+sets such that each set consists of data elements representing an atomic concept such as
+person, place, object, event, etc
+
+
+A key is defined as a set of attribute(s) in an entity or a relationship such that given a value of the key the search returns either no record or only one record. When multiple sets of attribute(s) qualify for a
+key, each set is called a candidate key. One of them is designated a primary key and the
+rest are called alternate key(s).
+
+Step 2: Create distinct sets of data elements from the pool such that each set represents
+an atomic concept.
+
+Step 3: Create additional sets, as needed, so that distinct atomic sets are linked by
+them. Such link sets do not represent atomic concepts. Instead, they relate two
+or more atomic concepts
+
+Step 4: Determine how different entities are related and replace each M:N type of relationship with two distinct relationships each of type 1:N. As a minimum,
+each relationship contains the primary keys of both linked entities as attributes.
+
+Step 5: Break down each vector valued attribute into multiple records, each containing
+a single value from the vector and repeat the remaining attributes.
+
+
+Step 6: Identify entities that can be classified as supertypes and subtypes and separate
+them into distinct entities such that each subtype is a supertype and each supertype is one of the subtypes.
+
+
+The three normal forms are described below with examples.
+First Normal Form (1NF)—A Table Is in 1NF if It Satisfies the Following
+Four Conditions
+• There are no vector valued attributes.
+• There are no duplicate rows.
+• All values of a column belong to the domain of that column.
+• The order of rows and columns is immaterial.
+• All values of a column belong to the domain of that column.
+• The order of rows and columns is immaterial.
+
+
+Second Normal Form (2NF)—A Table Is in 2NF if It Satisfies the Following Two Conditions
+• It is in 1NF.
+• Exactly one of the following three possibilities holds:
+—PK consists of a single column,
+—PK consists of all the columns, or
+—every non-PK column depends on the entire PK.
+
+
+Second Normal Form (2NF)—A Table Is in 2NF if It Satisfies the Following Two Conditions
+• It is in 1NF.
+• Exactly one of the following three possibilities holds:
+—PK consists of a single column,
+—PK consists of all the columns, or
+—every non-PK column depends on the entire PK
+
+
+
+Third Normal Form (3NF)—A Table Is in 3NF if It Satisfies the Following
+Two Conditions:
+• It is in 2NF.
+• It has no transitive dependency.
+As an example, each table in Figure 1.4 is in 3NF.
+
+
+A table has transitive dependency (TD) if a non-PK column functionally depends on
+another non-PK column without involving the PK. TD is undesirable because, theoretically,
+a table with TD can cause update anomalies by incurring loss of information.
+
+The five important tasks of this phase are as follows.
+(a) Ensure that each table is in the third normal form (3NF). For performance reasons it
+may be necessary later to do some denormalization. But the logical database should
+start with all 3NF tables.
+(b) Assign to each column in each table a data type and a size according to the specifications of the RDBMS that will be used later during the physical database design
+phase.
+(c) Formulate all data validations that can be enforced in the next phase through declarative constraints, i.e., clauses such as REFERENCES, CHECK, etc. of the data
+definition language (DDL) commands for creating or altering tables. REFERENCES
+involves the principle of referential integrity discussed below in Section 1.4.3.
+CHECK ensures the entry of a discrete or continuous range of valid values for column(s).
+(d) Formulate additional data validation algorithms that cannot be enforced through declarative constraints. These are implemented through triggers, procedures, and functions using proprietory procedural languages such as PL/SQL in Oracle or through
+host language interface programs using embedded SQL such as Pro*C,
+Pro*COBOL, etc. in Oracle.
+(e) Formulate additional indexing requirements besides the declaration of primary keys,
+if known at this point in time.The five important tasks of this phase are as follows.
+(a) Ensure that each table is in the third normal form (3NF). For performance reasons it
+may be necessary later to do some denormalization. But the logical database should
+start with all 3NF tables.
+(b) Assign to each column in each table a data type and a size according to the specifications of the RDBMS that will be used later during the physical database design
+phase.
+(c) Formulate all data validations that can be enforced in the next phase through declarative constraints, i.e., clauses such as REFERENCES, CHECK, etc. of the data
+definition language (DDL) commands for creating or altering tables. REFERENCES
+involves the principle of referential integrity discussed below in Section 1.4.3.
+CHECK ensures the entry of a discrete or continuous range of valid values for column(s).
+(d) Formulate additional data validation algorithms that cannot be enforced through declarative constraints. These are implemented through triggers, procedures, and functions using proprietory procedural languages such as PL/SQL in Oracle or through
+host language interface programs using embedded SQL such as Pro*C,
+Pro*COBOL, etc. in Oracle.
+(e) Formulate additional indexing requirements besides the declaration of primary keys,
+if known at this point in time.
+
+
+
+
+
+
+
+
+
+
+
+
