@@ -166,6 +166,45 @@ Pro*COBOL, etc. in Oracle.
 if known at this point in time.
 
 
+A data dictionary provides a central
+repository to document the work done during Phases (1) and (2), and is often described as
+a database about a database, or a meta database. 
+
+A CASE(Computer Aided Software Engineering) tool such as ERwin, Power Designer,
+Oracle Designer, etc. although some desktop RDBMS software such as Microsoft Access tool automatically builds the data dictionary as the enterprise data model is
+created. 
+
+
+a. COLUMN (Column Name, Column Description, Column Format, Data
+Source, Load Procedure, Validation, Comment)
+PK = Column Name.
+
+
+Oracle partitions the physical disk space of a database into a hierarchy of components: tablespace, segment, extent, and block. A database consists of multiple tablespaces, which are logical concepts. Each tablespace spans one or more physical disk files
+that are explicitly assigned to it.
+
+A tablespace consists of many segments such as table,index, temporary, rollback, etc. 
+
+Thus, a segment is a logical concept and is mapped onto multiple chunks of physical 
+storage areas called extents. 
+
+The extents belonging to a segment need not be contiguous.
+
+ Each extent, however, consists of multiple contiguous
+blocks, which are the lowest indivisible units of disk space.
+
+
+A segment consists of an initial extent and many next extents
+with the total number of extents not exceeding a parameter called maxextent.
+
+
+Block Size Maxextent
+2K 121
+4K 249
+8K 505
+16K 1017
+
+
 
 
 
