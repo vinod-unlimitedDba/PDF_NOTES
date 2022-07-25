@@ -204,14 +204,69 @@ Block Size Maxextent
 8K 505
 16K 1017
 
+**********************************************
+2                                            *
+Performance Tuning Methodology               *
+***********************************************
+
+Three Levels of a Database
+=====================
+The architecture of a database consists of three distinct but interrelated levels: conceptual,
+internal, and external. 
+
+The conceptual level involves a representation of the entire information content of the
+database and, as such, is the most important in a database application. The conceptual
+level is defined here to include ALL structural information about all database objects be
+longing to the database.
+
+The internal level, also called the physical level, is the one closest to the physical
+storage, where the data contents of the conceptual level are stored on disk files. In addition, the internal level contains a set of memory resident data structures that Oracle calls the System Global Area, and a set of background processes. 
+
+The external level is closest to the users. It is concerned with the way in which the users view the data for their own use. Thus, different users access different external levels
+of the database. The user can be an end user, a database developer, or a DBA working on
+some specific query generation. Each external level consists of a subset of the conceptual
+level.
 
 
 
+In an n-tier (n ≥ 3) client-server architecture the GUI type
+external levels normally reside on the application tier(s) comprising levels 2 through n –
+1. They access the database residing on the database server at the nth tier through the intervention of application programs. But the external level of any user accessing the database through the command line interface resides on the database server at the nth tier
 
 
 
+Fragmentation occurs when the extents of a table are not contiguous, or when the free space of a tablespace consists of many small sets of noncontiguous extents instead of a few large sets of contiguous extents. It degrades database
+performance because a single table with many noncontiguous extents is scattered over
+many small isolated fragments.
 
 
+Chaining and migration of rows (see Section 5.9) in a table can occur due to inserts
+and updates of records when its PCTFREE parameter is set incorrectly or when columns
+with VARCHAR2 data types that were initially NULL start getting updated with nonnull
+values
 
+Tables with LONG or LONG RAW data types deserve special attention since
+they almost always cause chaining.
+
+
+The following is a preliminary checklist of tuning activities at each level.
+
+Conceptual Level
+• Denormalization
+• Partitioning of Very Large Tables
+• Data Replication in Distributed Database
+Internal Level
+• Data Storage
+Two main reasons for inefficiency of data storage are fragmentation of tablespaces, and
+chaining and migration of rows in tables.
+• Memory Usage
+Here the goal is to make data available in memory instead of retrieving them from the
+disks since the data transfer rate for memory is an order of magnitude faster than that
+from auxiliary storage.
+
+
+If the data load with indices takes longer than
+10 minutes or so, then I drop the indices first, load the data into the table, and then create
+the indices for the updated table.
 
 
