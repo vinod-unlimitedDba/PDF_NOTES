@@ -101,3 +101,124 @@ object name does not appear on a STAT line (or on a WAIT line), query
 DBA_OBJECTS for a matching value in the OBJECT_ID column to locate the 
 owner, object name, and object type (and in some cases the subobject 
 name). 
+
+
+Generating a Trace File on Error 
+When an error message is returned to the client application, it is not always possible to determine the 
+exact cause of the error message. Oracle’s ERRORSTACK level 3 trace dump and PROCESSSTATE trace dump 
+output all open cursors for the session with bind variable values.
+
+To enable this feature including the error 
+stack (level 0), function call stack (level 1—the execution stack for the process), process state (level 2), 
+and context area (level 3), execute the following in the session (note that 1722 refers to the ORA-01722 
+error): 
+SQL> ALTER SESSION SET EVENTS '1722 TRACE NAME ERRORSTACK LEVEL 3';
+
+
+
+Initiating a Trace with SQL*Plus ORADEBUG
+====================================
+
+
+
+
+
+
+HANGANALYZE Dump 
+HANGANALYZE dumps drill into the specific processes in the database instance that are blocked by another 
+session (an enqueue-type wait, for instance), processes that are spinning because of a problem in the 
+database instance (such as an internal deadlock on pins or latches), and other situations involving 
+severe performance problems.
+
+
+HANGANALYZE dumps use internal kernel calls to 
+identify specific sessions of interest, identifying the waiting sessions and blocking sessions. See Metalink 
+Doc ID 215858.1 “Interpreting HANGANALYZE Trace Files to Diagnose Hanging and Performance 
+Problems” for additional detail about HANGANALYZE dumps. 
+
+
+ORADEBUG HANGANALYZE 3 
+Chains most likely to have caused the hang: 
+ [a] Chain 1 Signature: 'SQL*Net message from client'<= 
+ 'enq: TX - row lock contention' 
+ Chain 1 Signature Hash: 0x38c48850 
+ [b] Chain 2 Signature: 'SQL*Net message from client'<= 
+ 'enq: TX - row lock contention' 
+ Chain 2 Signature Hash: 0x38c48850 
+ [c] Chain 3 Signature: <not in a wait> 
+ Chain 3 Signature Hash: 0x673a0128 
+ 
+ 
+ HEAPDUMP Dumps 
+HEAPDUMP dumps provide a method to determine the contents of various memory regions in the 
+database instance including the SGA, PGA, large pool, Java pool, and so forth.The level specified for 
+the HEAPDUMP determines which memory region is dumped and whether recursion is used to find the 
+five largest subheaps.
+
+
+
+■ Note In the HEAPDUMP output, Chunk identifies the memory address, sz= lists the memory size in bytes, the next 
+column lists the type of memory chunk, and the final column lists the reason for allocation. 
+
+
+
+Java Pool Memory Allocation 
+The Java pool memory holds the shared portion of each Java class used per session, and in a shared 
+server configuration the Java pool also maintains the Java state per session (a portion of the UGA).
+
+QL> ORADEBUG SETMYPID 
+SQL> ORADEBUG UNLIMIT 
+SQL> ALTER SESSION SET TRACEFILE_IDENTIFIER='JAVA_POOL'; 
+SQL> ORADEBUG DUMP HEAPDUMP 128 
+SQL> ORADEBUG CLOSE_TRACE 
+
+
+Large Pool Memory Allocation 
+The large pool memory is used by parallel execution (parallel query) for parallel execution message 
+buffers, Recovery Manager for disk I/O buffers when I/O slaves are used, shared server allocation of the 
+User Global Area (UGA), and Oracle XA (X/Open Distributed Transaction Processing Architecture).
+
+SQL> ORADEBUG SETMYPID 
+SQL> ORADEBUG UNLIMIT 
+SQL> ALTER SESSION SET TRACEFILE_IDENTIFIER='LARGE_POOL'; 
+SQL> ORADEBUG DUMP HEAPDUMP 32 
+SQL> ORADEBUG CLOSE_TRACE 
+HEAP DUMP heap name="large pool" desc=0000000006F12550 
+ extent sz=0xfe0 alt=216 het=32767 rec=9 flg=-126 opc=0 
+ parent=0000000000000000 owner=0000000000000000 nex=0000000000000000 xsz=0x41ae0 
+
+
+
+PGA and UGA Memory Allocation 
+PGA/UGA dumps are useful when troubleshooting ORA-4030 out of process memory when trying to 
+allocate %s bytes errors that may be an indication of a PGA memory leak in a session causing the 
+memory used by the process to continue increasing in size. Multiple HEAPDUMPs may be required when 
+troubleshooting ORA-4030 errors. 
+
+SQL> ORADEBUG SETMYPID 
+SQL> ORADEBUG UNLIMIT 
+SQL> ALTER SESSION SET TRACEFILE_IDENTIFIER='PGA_UGA'; 
+SQL> ORADEBUG DUMP HEAPDUMP 5 
+SQL> ORADEBUG CLOSE_TRACE 
+HEAP DUMP heap name="session heap" desc=000000001F675968 
+ extent sz=0xff80 alt=32767 het=32767 rec=0 flg=2 opc=3 
+ parent=000000001ABB1C90 owner=000000026CACD920 nex=0000000000000000 xsz=0x1e278
+ 
+ 
+ The following commands instruct ORADEBUG to connect to the process for the current session, 
+remove the maximum trace file size limitation, specify a portion of the trace filename to help the DBA 
+locate the trace file, write a description of the shared pool contents identifying the top five sub-subheaps 
+to the trace file, and then close the trace file. A portion of the trace file follows: 
+SQL> ORADEBUG SETMYPID 
+SQL> ORADEBUG UNLIMIT 
+SQL> ALTER SESSION SET TRACEFILE_IDENTIFIER='SGA_TOP_5'; 
+SQL> ORADEBUG DUMP HEAPDUMP 536870914 
+SQL> ORADEBUG CLOSE_TRACE 
+
+
+
+ 
+
+
+
+
