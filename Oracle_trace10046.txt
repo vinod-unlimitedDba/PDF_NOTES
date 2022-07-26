@@ -215,7 +215,110 @@ SQL> ALTER SESSION SET TRACEFILE_IDENTIFIER='SGA_TOP_5';
 SQL> ORADEBUG DUMP HEAPDUMP 536870914 
 SQL> ORADEBUG CLOSE_TRACE 
 
+SHORT_STACK Dump 
+A SHORT_STACK dump shows the process stack for the attached process, output directly to the SQL*Plus 
+screen. It may be necessary to execute the SHORT_STACK dump multiple times to determine the status of 
+the process through the use of the process stack traces.
 
+SQL> ORADEBUG SETORAPID 26 
+Oracle pid: 26, Windows thread id: 836, image: ORACLE.EXE (SHAD) 
+SQL> ORADEBUG SHORT_STACK
+
+SYSTEMSTATE dumps captured at level 2 
+are helpful when used in conjunction with a level 3 HANGANALYZE dump. To also include a short stack 
+output in the trace file, set event 10998 or add 256 to the SYSTEMSTATE dump level.
+
+
+
+Examining Client-Side Traces 
+Client-side trace options are available from a variety of sources including Oracle’s SQL*Net (see 
+Metalink Doc IDs 779226.1, 219968.1, and 395525.1); Windows client tracing (see Metalink Doc ID 
+216912.1) using ODBC, Oracle Provider for OLE DB, Oracle Objects for OLE (OO4O), Oracle Data 
+Provider for .NET (ODP.NET), and Oracle Service for Microsoft Transaction Server (ORAMTS); clientside file- and registry-monitoring utilities on the Windows platform including Process Monitor.
+
+
+SQL*Net Tracing 
+Several parameters in the sqlnet.ora file control whether logging is enabled for the client, server, or 
+listener, as well as the level of detail and location of the log files. The following are entries in a sqlnet.ora
+file on a Windows client, enabling a level 16 (SUPPORT level) log, with the resulting log files written to the 
+C:\TRACEFILES directory: 
+TRACE_LEVEL_CLIENT = 16 
+TRACE_DIRECTORY_CLIENT=C:\TRACEFILES 
+TRACE_UNIQUE_CLIENT = ON 
+TRACE_TIMESTAMP_CLIENT = ON
+
+
+
+Process Monitor Tracing 
+Process Monitor, available as a free download from Microsoft’s website, time-synchronizes Windows 
+Registry accesses with local and remote file accesses, allowing generated log files to be manually time 
+sequenced with SQL*Net traces, network packet traces, and 10046 extended SQL traces.
+
+
+Investigating Enqueue Waits 
+When investigating enqueue-type waits (enqueue – in releases prior to Oracle 10.1, enq: TM – 
+contention, enq: TX - row lock contention, enq: HW – contention,
+
+
+
+The following SQL statement retrieves either the current and/or the most recent wait events for the 
+sessions. Because of space limitations, the USERNAME, PROGRAM, SQL_ID, SQL_ADDRESS, SQL_HASH_VALUE, and 
+SQL_CHILD_NUMBER columns are not displayed. The omitted columns have limited value for this test case, 
+but will prove to be helpful when attempting to troubleshoot problems in a production environment. 
+SQL> SELECT /*+ ORDERED */ 
+ 2 S.SID, S.USERNAME, S.PROGRAM, S.STATUS, SW.EVENT, SW.WAIT_TIME WT, SW.STATE, 
+ 3 SW.SECONDS_IN_WAIT S_I_W, S.SQL_ID, S.SQL_ADDRESS, S.SQL_HASH_VALUE, 
+ 4 S.SQL_CHILD_NUMBER, S.ROW_WAIT_OBJ# OBJ#, S.ROW_WAIT_FILE# FILE#, 
+ 5 S.ROW_WAIT_BLOCK# BLOCK#, S.ROW_WAIT_ROW# ROW#, SW.P1, SW.P2, SW.P3 
+ 6 FROM 
+ 7 V$SESSION_WAIT SW, V$SESSION S 
+ 8 WHERE 
+ 9 S.USERNAME IS NOT NULL 
+ 10 AND SW.SID=S.SID 
+ 11 AND SW.EVENT NOT LIKE '%SQL*Net%' 
+ 12 AND SW.EVENT NOT IN ('Streams AQ: waiting for messages in the queue', 
+ 13 'wait for unread message on broadcast channel'); 
+SID EVENT WT STATE S_I_W OBJ# FILE# BLOCK# ROW# P1 P2 P3 
+--- -------------------- -- ------- ----- ---- ----- ------ ---- ---------- ----- -- 
+154 enq: TM - contention 0 WAITING 51 -1 0 0 0 1414332421 67165 0 
+155 enq: TM - contention 0 WAITING 33 -1 0 0 0 1414332419 67165 0
+
+
+
+
+Enqueue locks occur in various modes ranging from 1 to 6: 
+x Mode 1 is known as a NULL lock, indicating that no session holds the resource 
+(SELECT statement). 
+x Mode 2 is a row shared S(SS) lock indicating read access to a compound resource 
+(SELECT FOR UPDATE, LOCK ROW SHARE). 
+x Mode 3 is a row exclusive X(SX) lock indicating write access to a compound 
+resource (INSERT, UPDATE, DELETE, LOCK ROW EXCLUSIVE). 
+x Mode 4 is a share (S) lock indicating that one or more sessions are reading (LOCK 
+SHARE, CREATE INDEX). 
+x Mode 5 is a share row exclusive X(SSX) lock that is a combination of read access 
+for one part of a compound resource and write access to another part of a 
+compound resource (LOCK SHARE ROW EXCLUSIVE). 
+x Mode 6 is an exclusive (X) lock indicating that the session is writing (INSERT, UPDATE 
+TABLE, LOCK EXCLUSIVE, ALTER TABLE, DROP TABLE, DROP INDEX, TRUNCATE TABLE). 
+
+
+he lock types, and the last SQL statement executed by the sessions: 
+SQL> SELECT 
+ 2 S.SID, S.USERNAME, S.PROGRAM, S.SQL_ID, S.SQL_ADDRESS, S.SQL_HASH_VALUE, 
+ 3 S.SQL_CHILD_NUMBER CN, S.ROW_WAIT_OBJ#, S.ROW_WAIT_FILE#, S.ROW_WAIT_BLOCK#, 
+ 4 S.ROW_WAIT_ROW#, L.LMODE, L.REQUEST, L.ID1, L.ID2, L.TYPE, L.BLOCK 
+ 5 FROM 
+ 6 V$LOCK L, 
+ 7 V$SESSION S 
+ 8 WHERE 
+ 9 (L.ID1, L.ID2, L.TYPE) IN 
+ 10 (SELECT 
+ 11 ID1, ID2, TYPE 
+ 12 FROM 
+ 13 V$LOCK 
+ 14 WHERE 
+ 15 REQUEST > 0) 
+ 16 AND L.SID=S.SID; 
 
  
 
