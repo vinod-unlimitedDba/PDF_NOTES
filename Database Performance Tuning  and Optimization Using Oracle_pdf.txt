@@ -269,4 +269,30 @@ If the data load with indices takes longer than
 10 minutes or so, then I drop the indices first, load the data into the table, and then create
 the indices for the updated table.
 
+SYSTEMSTATE Dump 
+SYSTEMSTATE dumps are performed using nonread consistent techniques, meaning that the data output 
+at the end of a long duration dump may not have existed in its current state when the dump was 
+initiated.
 
+
+
+
+ Performance Issues at the Conceptual Level
+As indicated in Section 2.2, performance issues manifest themselves in the form of high
+response time that is unacceptable to the users. During the development phase the developers and the DBAs jointly address such issues by tuning all three levels of the database.
+The improved response time is then demonstrated during the test phase. The conceptual
+level can be tuned through these activities:
+(a) Denormalization of the schema to reduce the number of joins in ad hoc queries and
+reports;
+(b) Creation of new indices or modification of existing indices to force indexed search of
+tables instead of full table scans, where appropriate;
+(c) Integration of views into queries to avoid long-running SELECT statements involving views;
+(d) Partitioning of very large tables to take advantage of parallel full table scans or to access only some partitions instead of accessing the entire tables;
+(e) Data replication for copying the same conceptual level at multiple locations to reduce query processing time and to avoid failed updates when communication links to
+some of the remote sites are down. Each of the above items involves a change in the
+conceptual level, which, therefore, must be updated with each change. If ERwin or
+any other similar CASE tool is used, such changes are automatically migrated to the
+relevant scripts for schema creation.
+
+
+On Line Transaction Processing (OLTP) applications update tables through online transactions performed by the users.
