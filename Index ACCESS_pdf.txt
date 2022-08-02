@@ -1,0 +1,157 @@
+=========================================+
+Expert Oracle Indexing and Access Paths  +
+ ========================================+
+
+CHAPTER 1 Introduction to Oracle Indexes 
+======================================================
+ 
+An index is a combination of a value and an associated location that allows you to quickly locate an object. 
+We probably often use index structures to navigate throughout the day, such as:
+         • Browsing a catalog menu to efficiently find a desired item
+         • Accessing a bookmark to retrieve a web page
+         • Glancing at the calendar to determine a date 
+ 
+Similar to the way you use indexes in everyday life, a database index primarily exists to enable fast access to one or more rows of information stored in a database.
+ 
+In Oracle, an index stores a table column value along with the table row’s physical address ( ROWID ).. 
+Each ROWID contains details on the location of a table row (e.g., the data file number, block number, and row location).
+ 
+If indexes are so important to database performance, why not place them on all tables and column combinations? 
+The answer is short: indexes are not free. They consume disk space and system resources.
+ 
+Indexes use storage, I/O, CPU, and memory resources. 
+A poor choice of indexes leads to wasted disk usage and excessive consumption of system resources.
+This results in a decrease in database performance.
+ 
+Introduce basics of index concept:
+ 
+Index Basics 
+ 
+ Database indexes are typically created to facilitate better query performance. 
+      • Performance without an index 
+      • Implementing an index to improve performance 
+      • Accessing only the index to return a query result set 
+      • Demonstrating when an index is ignored 
+ 
+Performance Without an Index To set up this example , suppose you
+=========================================================== 
+        create a table to hold customer information, like so: 
+
+        create table cust (cust_id number ,last_name varchar2(30) ,first_name varchar2(30)); 
+ 
+        insert into cust (cust_id, last_name, first_name) values(1, 'STARK','JIM'); 
+
+The performance of this query is initially very fast: 
+
+    select cust_id, last_name, first_name from cust where last_name = 'STARK';  
+    
+Run Again the query after insert 10000 rows performance decreased
+ 
+If business grow rapidly customer increased
+ 
+          insert into cust 
+          select level + 1 
+           ,dbms_random.string('U',dbms_random.value(3,15)) rand_last_name 
+           ,dbms_random.string('U',dbms_random.value(3,15)) rand_first_name 
+          from dual connect by level < 100000;
+
+ When generating an execution plan, the query optimizer relies on table and index statistics to generate an optimal execution plan. 
+ Statistics in this sense means information about the table and associated indexes, such as number of rows, number of blocks, number of distinct values, and so on. 
+
+
+
+
+1. The user submits a query. 
+2. The query is passed to an Oracle server process. 
+3. The optimizer is invoked. It creates an execution plan, which determines that a full table scan of the CUST table is required. 
+4. Since there is no index in place, every row of the table must be inspected to determine if it should be returned to the user, 
+   even though there is only one row in the table that will eventually be returned.
+5. The table row is returned to the Oracle server process. 
+6. The Oracle server process returns the result set to the user
+
+===============================================================================================================================================================
+  select query without index                                           ||=======================||
+                                                                       || OPtimizer determines  ||
+                                                                       ||	how to retrieve data  || 
+                                                                       ||	(execution plan)      || 
+                                                                       ||=======================||       
+                                                                                |                      
+                                                                              st|ep3			                             
+                                                                                |			     								 || ------------------
+                           _____________________________                  |-----------|                    ||  Datafile
+                step1     |____                         |   step 2        |           |             cust   ||---------------------  
+  ( END USER) =========== |select cudt_id,last_name     | ------------->  |	Oracle    |============> table ||   block 
+                          | first_name from cust where  |   step 7        |	server    |<===========        || -----------------    					
+						              |  Last_name='CLARY'          |          		    |           |     				       ||   234 | clary | kirsten
+						              |						                  | ------------->  |           |          
+						              |----------------------------- |                |-----------|         
+
+
+ Implementing an Index to Improve Performance
+ ================================================
+ index on columns that appear in the WHERE clause of a SQL query might improve performance, 
+ and then decide to create an index on the CUST table’s LAST_NAME column
+ 
+Notice that the cost of the query has dramatically dropped and that the newly created index is being used to assist in the retrieval of data.
+ 
+To conceptualize how the index improves performance, recall that an index stores two types of information: 
+the value of the table column(s) and the corresponding ROWID . 
+The ROWID uniquely identifies a row (for heap-organized tables) within a database and contains its 
+physical location (data file, block, and row position within the block).
+ 
+Index is created and subsequent queries execute, 
+the query optimizer considers whether the index will reduce the amount of resources (cost) required to return the results of the query.
+ 
+1. The user submits a query. 
+2. The query is passed to an Oracle server process.
+3. The optimizer is invoked. It creates an execution plan that includes accessing the index.
+4. The index is accessed to retrieve the ROWID of the table row of interest.
+5. Using the ROWID , the row is located within a data file and block. 
+6. The table row is returned to the Oracle server process. 
+7. The Oracle server process returns the result set to the user. 
+
+
+
+
+
+
+
+
+                                                                     ||=======================||
+																	                                   || OPtimizer determines  ||
+																	                                   ||	how to retrieve data  || 
+																	                                   ||	(execution plan)      ||                            || ------------------
+																                                     ||=======================||                            ||  Datafile
+                                                                                |                     step6  cust           ||---------------------
+																			                                        st|ep3			        ||=======> table          ||   block
+																		 	                                        	|			            ||	                      || ----------------- 
+                           _____________________________                  |-----------|           ||        |=============> ||   234 | clary | kirsten
+                step1     |____                         |   step 2        |           |           ||        | 
+  ( END USER) =========== |select cudt_id,last_name     | ------------->  |	Oracle    |===========||        |
+                          | first_name from cust where  |   step 7        |	server    |           ||   	   5|			
+						              |	Last_name='CLARY' 			    |                 |           |           ||        |  
+						              |                             | ------------->  |           |           ||  		  |               ||-------------- 
+						              |-----------------------------                  |-----------|           ||        <============== ||  Index blocK
+																								                                                  ||========> INDEX	        ||----------------
+																								  		                                                 step4   BLK          || Rowid clary	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
