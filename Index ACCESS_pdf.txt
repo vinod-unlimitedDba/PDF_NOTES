@@ -236,14 +236,20 @@ Reverse key indexes may be appropriate in Real Application Clusters (RAC) enviro
 ================
 A key compressed index is useful in reducing the storage and I/O requirements of concatenated indexes where the leading column is often repeated. Use the COMPRESS N clause to create a compressed index, as shown here:
 	 create index cust_cidx_1 on cust(last_name, first_name) compress 2;  
-	Descending Indexes
-	 By default, Oracle stores B-tree indexes in ascending order. For example, if you have an index on a column with a number data type, the smallest numbers appear first in the index (the leftmost leaf node) and the highest numbers are stored in the rightmost leaf nodes.
+	
+Descending Indexes
+===================
+
+By default, Oracle stores B-tree indexes in ascending order. For example, if you have an index on a column with a number data type, the smallest numbers appear first in the index (the leftmost leaf node) and the highest numbers are stored in the rightmost leaf nodes.
+	
+	create index cust_didx1 on cust(cust_id desc); 
+ 
+ Descending indexes are useful for queries that sort some columns in ascending order and other columns in descending order.  
 	 
-	       create index cust_didx1 on cust(cust_id desc); 
-	 Descending indexes are useful for queries that sort some columns in ascending order and other columns in descending order.  
-	 
-	 Bitmap Index
-	 Bitmap indexes are commonly used in data warehouse environments. These indexes are recommended for columns with a relatively low number of distinct values (low cardinality). Bitmap indexes are also efficient for SQL statements that use multiple AND or OR join operators in the WHERE clause (which is typical in a data warehouse environment).  
+Bitmap Index
+===============
+
+Bitmap indexes are commonly used in data warehouse environments. These indexes are recommended for columns with a relatively low number of distinct values (low cardinality). Bitmap indexes are also efficient for SQL statements that use multiple AND or OR join operators in the WHERE clause (which is typical in a data warehouse environment).  
 	 
 	 we should not use bitmap indexes in OLTP databases with high INSERT / UPDATE / DELETE activities. because the structure of the bitmap index results in many locked rows during singular DML operations (which results in locking problems for high-transaction OLTP systems). A bitmap index is created using the BITMAP keyword.
 	 
@@ -253,8 +259,9 @@ A key compressed index is useful in reducing the storage and I/O requirements of
 	 
 	Bitmap indexes and bitmap join indexes are available only with the Oracle Enterprise Edition of the database. 
 	 
-	 Bitmap Join 
-	A bitmap join index stores the results of a join between two tables in an index. Bitmap join indexes are appropriate in situations where you’re joining two tables using the foreign key column(s) in one table that relate to primary key column(s) in another table.
+ Bitmap Join 
+
+      A bitmap join index stores the results of a join between two tables in an index. Bitmap join indexes are appropriate in situations where you’re joining two tables using the foreign key column(s) in one table that relate to primary key column(s) in another table.
 	 
 	Bitmap join indexes are usually suitable for data warehouse environments that have tables periodically batch loaded but then are not updated.
 	 
@@ -263,18 +270,18 @@ A key compressed index is useful in reducing the storage and I/O requirements of
 	create table d_customers (d_customer_id number primary key ,cust_name varchar2(30)); 
 	create bitmap index f_sales_bmj_idx1 on f_sales(d_customers.cust_name) from f_sales, d_customers where f_sales.d_customer_id = d_customers.d_customer_id;  
 	 
-	Function-Based Indexes
-	 Function-based indexes are created with SQL functions or expressions in their definitions. Function-based indexes allow index lookups on columns referenced by SQL functions in the WHERE clause of a query.
+Function-Based Indexes
+	 Function-based indexes are created with SQL functions or expressions in their definitions. Function-based indexes allow index lookups on columns referenced 	      by SQL functions in the WHERE clause of a query.
 	 
 			create index cust_fidx1 on cust(upper(last_name)); 
 	 
 	 Indexed Virtual Column An alternative to a function-based index is to add a virtual column to a table and then create an index on that virtual column. 
 	 
-	 Indexed Virtual Column 
+ Indexed Virtual Column 
 	 
 	An alternative to a function-based index is to add a virtual column to a table and then create an index on that virtual column. 
 	 
-			create table inv( inv_id number ,inv_count number ,inv_status generated always as ( case when inv_count <= 100 then 'GETTING LOW' when inv_count > 100 then 'OKAY' end) );  
+			create table inv( inv_id number ,inv_count number ,inv_status generated always as ( case when inv_count <= 100 then 'GETTING LOW' when 				inv_count > 100 then 'OKAY' end) );  
 	 
 	Now you can create a regular index on the virtual column, as follows:
 	 
@@ -289,18 +296,19 @@ A key compressed index is useful in reducing the storage and I/O requirements of
 	 
 	When would this be useful? Let’s suppose you have a very large index that you want to create without allocating space. To determine if the index would be used by the optimizer, you can create an index with NOSEGMENT , which allows you to test that scenario. 
 	 
-	Global and Local Partitioned Indexes 
-	A partitioned index is one where you have one logical index, but physically the index is implemented in several different segments. This allows for good performance even with very large databases. A partitioned index can be either global or local.  
+Global and Local Partitioned Indexes 
+========================================
+	A partitioned index is one where you have one logical index, but physically the index is implemented in several different segments. This allows for 		 good performance even with very large databases. A partitioned index can be either global or local.  
 	 
-	A global partitioned index is an index that uses a partitioning strategy that is not mapped to the underlying table’s segments. Global partitioned indexes are implemented as type B-tree and can be defined as unique. Use the GLOBAL PARTITION clause to create an index that is globally partitioned
+	A global partitioned index is an index that uses a partitioning strategy that is not mapped to the underlying table’s segments. Global partitioned indexes 	  are implemented as type B-tree and can be defined as unique. Use the GLOBAL PARTITION clause to create an index that is globally partitioned
 	 
-	create index f_sales_gidx1 on f_sales(sales_amt) global partition by range(sales_amt) (partition pg1 values less than (25) ,partition pg2 values less than (50) ,partition pg3 values less than (maxvalue));
+		create index f_sales_gidx1 on f_sales(sales_amt) global partition by range(sales_amt) (partition pg1 values less than (25) ,partition pg2 values 		less than (50) ,partition pg3 values less than (maxvalue));
 	 
-	 A local partitioned index must be built on a partitioned table. This index type follows the same partitioning strategy as its underlying table.A given partition of a local partitioned index only contains values from its corresponding partition of the table. A local partitioned index can be either B-tree or bitmap.
+	A local partitioned index must be built on a partitioned table. This index type follows the same partitioning strategy as its underlying table.A given 		partition of a local partitioned index only contains values from its corresponding partition of the table. A local partitioned index can be either B-tree or 	    bitmap.
 	 
-	create table f_sales( sales_amt number ,d_date_id number ,d_product_id number ,d_customer_id number) partition by range(sales_amt)( partition p1 values less than (100) ,partition p2 values less than (1000) ,partition p3 values less than (maxvalue));
+			create table f_sales( sales_amt number ,d_date_id number ,d_product_id number ,d_customer_id number) partition by range(sales_amt)( 				partition p1 values less than (100) ,partition p2 values less than (1000) ,partition p3 values less than (maxvalue));
 	 
-	 create index f_sales_idx2 on f_sales(d_date_id, sales_amt) local;
+			 create index f_sales_idx2 on f_sales(d_date_id, sales_amt) local;
 	 
 	An application domain index is custom to a specific application. This accommodates indexes on custom data types, documents, images, video, and spatial data.
 	 
@@ -309,15 +317,16 @@ A key compressed index is useful in reducing the storage and I/O requirements of
 	A hash cluster is similarly used with cluster tables; the difference is that a hash cluster uses a hash function instead of the index key.
 	 
 	Define a primary key constraint for each table . This results in an index automatically being created on the columns specified in the primary key.
-	 • Create unique key constraints on columns that are required to be unique and are different from the primary key columns . Each unique key constraint results in an index automatically being created on the columns specified in the constraint. 
+	 • Create unique key constraints on columns that are required to be unique and are different from the primary key columns . 
+	 Each unique key constraint results in an index automatically being created on the columns specified in the constraint. 
 	• Manually create indexes on foreign key columns . This is done for better performance and to avoid certain locking issues 
 	 
-	 Indexes on Foreign Key Columns 
+Indexes on Foreign Key Columns 
 	One reason is that foreign key columns are often referenced in WHERE clauses and therefore performance can be improved with these queries.  
 	 
-	Another reason to index foreign keys is to reduce table-locking issues. Namely, if no index exists on the foreign key column, when deleting from a child table, the parent table becomes locked. This unnecessarily locks rows and reduces concurrency.  
+	Another reason to index foreign keys is to reduce table-locking issues. Namely, if no index exists on the foreign key column, when deleting from a child 	table, the parent table becomes locked. This unnecessarily locks rows and reduces concurrency.  
 	 
-	• Create indexes on columns used often as predicates in the WHERE clause; when multiple columns from a table are used in the WHERE clause, consider using a concatenated (multicolumn) index. 
+	• Create indexes on columns used often as predicates in the WHERE clause; when multiple columns from a table are used in the WHERE clause, consider using a 	      concatenated (multicolumn) index. 
 	• Create a covering index on columns used in the SELECT clause. 
 	• Consider creating indexes on columns used in the ORDER BY , GROUP BY , UNION , or DISTINCT clauses.
 
