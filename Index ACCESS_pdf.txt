@@ -331,6 +331,68 @@ Indexes on Foreign Key Columns
 	• Consider creating indexes on columns used in the ORDER BY , GROUP BY , UNION , or DISTINCT clauses.
 
 
+Guideline                                                                      Reasoning                                                                                                            
+  ---------------------------------------------------------------------------------------------------------------                                                  
+Create as many indexes as you need, but try to                     Indexes increase performance, but also 
+keep the number to a minimum. Add indexes                          space and processing resources. Don't add      
+judiciously. Test first to determine quantifiable                  indexes unnecessarily.
+performance gains.
+		
+The required performance of queries you                            Indexing columns used in SQL queries helps
+execute against a table should form the basis of 		   performance the most.
+your indexing strategy                                                              
+
+Consider using the SQL Tuning Advisor for                          These tools provide recommendations and a               
+indexing recommendations                                           second set 
+
+Create primary key constraints for all tables.       		   This automatically creates a B-tree index (if the      
+Columns in the primary key aren't already indexed).
+
+Create unique key constraints where           			  This automatically creates a B-tree index (if the columns
+appropriate.	 			         		  in the unique key aren't already indexed).	
+
+Create indexes on foreign key columns.     			 Foreign key columns are usually included in the WHERE clause when joining tables, and thus improve
+					    			 performance of SQL SELECT statements. Creating a B-tree index on foreign key columns also reduces 								    locking issues when updating/deleting from parent tables.
+
+Carefully select and test indexes                   		Even on small tables, indexes can sometimes perform
+on small tables (small being less                   		better than full table scans.
+than a few thousand rows).       
+
+Use the correct type of index.    	                          Correct index usage maximizes performance. 
+
+
+B-tree indexes are suitable for most              		 Use the basic B-tree index type if you don't
+applications where have a verifiable               		a you have high-cardinality column values.
+performance gain from using							
+										
+Consider using bitmap indexes                 			These indexes are ideal for low-cardinality columns where the	
+in data warehouse environments.   				values aren't updated often. Bitmap indexes work well on foreign key columns on star schema fact 								 tables where you often run queries that use AND and OR join conditions. 
+
+
+Consider using a separate tablespace   				Table and index data may have different storage and/ or backup
+for indexes (separate from tables).      			 and recovery requirements. Using separate tablespaces lets you 
+								manage indexes separately from tables. If you don't have these types of requirements, it's fine to 								   place tables and indexes in the same tablespace. 
+						   
+Let the index inherit its storage 
+properties from the tablespace.       			This makes it easier to manage and maintain index storage.
+ 
+Use consistent naming standards.          		This makes maintenance and troubleshooting easier.
+												
+Don't rebuild indexes unless you          	    	Rebuilding indexes is generally unnecessary unless an index is 
+have a solid reason to do so.				corrupt or you want to move an index to different tablespace.	
+                     
+ 
+Monitor your indexes. Drop indexes    			    Doing this frees up physical space and improves the performance 
+that aren't used.                       	            of data  manipulation language (DML) statements. 
+					
+
+Before  dropping an index, consider        		This allows you to better determine if there are any
+Marking It as unusable or invisible.        		 These options let you rebuild or re-enable the index without 	
+performance issues before                     		 requiring the data definition language (DDL) creation statement.
+you drop the index.
+				 
+				
+
 
 
 
