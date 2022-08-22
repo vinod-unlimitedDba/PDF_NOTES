@@ -596,6 +596,238 @@ dba_users.USERNAME not in ('SYS', 'SYSTEM');
 spool off
 
 
+Data Block Structure
+The data block is the lowest unit of storage for data. Its structure consists of three compo
 
+(a) Overhead: It includes three parts, as described below:
+• Header consisting of a common and a variable part that together contain such information as the block address, segment type, etc.;
+• Table Directory containing information about the table(s) having rows in this
+block; and
+• Row Directory containing information such as ROWIDs of the actual rows in the
+block using two bytes for each stored row. Since a ROWID is never reused, the
+space once allocated to store a ROWID is not reclaimed when that row is deleted;
+
+b) Row Data: This part of the data block contains the actual data in the table or index;
+(c) Free Space: This part is reserved for inserting new rows or updating existing rows by
+replacing column(s) that were NULL before.
+
+
+CREATE TABLE command, control
+the free space in a data block: PCTFREE and PCTUSED. PCTFREE (default = 10) sets
+the percentage of a data block that is reserved for possible updates of currently existing
+rows. PCTUSED (default = 40) sets the minimum percentage of a data block that can be
+used for row data plus overhead before new rows can be added to the block. PCTFREE
+and PCTUSED work together to optimize the space utilization within a data block. Also,
+PCTFREE + PCTUSED cannot exceed 100.
+
+
+5.6 Used Space Fragmentation at the Segment Level
+
+A segment is a table, an index, a rollback segment, or a temporary segment. When it is
+created, it is assigned a storage space S computed by the formula:
+S = INITIAL + NEXT * (MINEXTENTS – 1)
+
+
+5.6.1 Rules for Tracking Fragmentation
+
+(a) Run the script in Figure 5.7 regularly to monitor the number of extents (“Ext” column in Figure 5.8) allocated to each segment. Identify the segments for which this
+number exceeds 100.
+(b) For each segment identified in step (a), run the script of Figure 5.16. Its output (see
+Figure 5.17 and its accompanying analysis below) lists each segment with all of its
+extents identified with their Extent_IDs, Block_IDs, and sizes in Oracle blocks.
+(c) If the extents allocated to a segment are mostly contiguous, the performance may not
+suffer. Otherwise, corrective action is necessary.
+
+
+REM Used Space Extent Map for EXAMPLE Database
+REM Script File Name: My_Directory\extent_contiguity.sql
+REM Spool File Name: My_Directory \extent_contiguity.lst
+REM Author: NAME
+REM Date Created: DATE
+REM Purpose: For each segment, list all its extents
+REM by Extent_ID REM and Block_ID
+REM Note: Segment = Table, Index
+REM
+
+COLUMN TODAY NEW_VALUE xTODAY NOPRINT FORMAT A1 TRUNC
+TTITLE LEFT xTODAY -
+RIGHT 'Page ' FORMAT 999 SQL.PNO -
+CENTER ' Used Space Extent Map - EXAMPLE Database' SKIP 4
+BTITLE 'Script File: My_Directory\ extent_contiguity.sql|
+Spool File: My_Directory\ extent_contiguity.lst'
+COLUMN SEGMENT_NAME HEADING 'Segment|Name' FORMAT A25
+COLUMN SEGMENT_TYPE HEADING 'Segment|Type' FORMAT A8
+COLUMN EXTENT_ID HEADING 'Ext|ID' FORMAT 999
+COLUMN BLOCK_ID HEADING 'Block|ID' FORMAT 99999
+COLUMN EXTENTS HEADING 'Ext' FORMAT 999
+COLUMN BLOCKS HEADING 'Blocks' FORMAT 999,999
+BREAK ON SEGMENT_NAME SKIP 0 ON SEGMENT_TYPE SKIP 0 -
+ON EXTENTS SKIP 0
+SET LINESIZE 78
+SET PAGESIZE 41
+SET NEWPAGE 0
+SPOOL My_Directory\extent_contiguity.lst
+SELECT a.SEGMENT_NAME, a.SEGMENT_TYPE, EXTENTS, EXTENT_ID,
+Block_ID, b.BLOCKS,
+TO_CHAR (SysDate, 'fmMonth ddth, YYYY') TODAY
+FROM DBA_SEGMENTS a, DBA_EXTENTS b
+WHERE
+a.SEGMENT_NAME = b.SEGMENT_NAME AND
+a.SEGMENT_TYPE = b.SEGMENT_TYPE AND
+a.TABLESPACE_NAME != 'SYSTEM' AND
+a.SEGMENT_NAME NOT LIKE '%$%'
+ORDER BY a.SEGMENT_NAME, EXTENT_ID;
+SPOOL OFF
+
+
+
+: Status of Free Space in Tablespaces
+
+SET LINESIZE 100
+SET PAGESIZE 41
+SET NEWPAGE 0
+SELECT TABLESPACE_NAME TABLESPACE, ROUND (SUM (BYTES) / 1048576)
+"Free Space in MB",
+ROUND (MAX (BYTES) / 1048576) "Largest Contiguous Chunk in MB"
+FROM DBA_FREE_SPACE
+GROUP BY TABLESPACE_NAME;
+
+
+script for  Segments Unable to Extend
+
+REM Free Space Unavailable for EXAMPLE Database
+REM Script File Name: My_Directory\Free_Space_Unavailable.sql
+REM Spool File Name: My_Directory\Free_Space_Unavailable.lst
+REM Author: NAME
+REM Date Created: DATE
+REM Purpose: Information on tablespace(s) where free
+REM space is NOT AVAILABLE for the next
+REM extent of any segment in the tablespace(s)
+REM
+REM
+COLUMN TODAY NEW_VALUE xTODAY NOPRINT FORMAT A1 TRUNC
+TTITLE LEFT xTODAY -
+RIGHT 'Page ' FORMAT 999 SQL.PNO -
+CENTER 'Free Space Unavailable in Tablespaces' SKIP 4
+BTITLE 'Script File: My_Directory\Free_Space_Unavailable.sql|
+Spool File: My_Directory\Free_Space_Unavailable.lst'
+COLUMN TABLESPACE_NAME HEADING 'Tablespace|Name' FORMAT A16
+COLUMN SEGMENT_NAME HEADING 'Segment|Name' FORMAT A20
+COLUMN TABLE_NAME HEADING 'Table|Name' FORMAT A20
+BREAK ON TABLESPACE_NAME SKIP 1 ON TABLE_NAME SKIP 0
+SET LINESIZE 78
+SET PAGESIZE 41
+SET NEWPAGE 0
+SPOOL My_Directory\Free_Space_Unavailable.lst
+select s.tablespace_name, s.segment_name, s.next_extent "Next
+Extent", f.free_bytes "Free Bytes", TO_CHAR (SysDate,
+'fmMonth ddth, YYYY')
+TODAY
+from dba_segments s,
+(select tablespace_name,
+sum(bytes) free_bytes
+from dba_free_space
+group by tablespace_name) f
+where f.tablespace_name = s.tablespace_name
+and s.next_extent > f.free_bytes;
+SPOOL OFF
+
+There are some situations where two or more contiguous free extents are combined
+into a single large contiguous free extent.
+1. If the PCTINCREASE storage parameter is positive, the background process SMON
+(System MONitor) automatically coalesces contiguous free extents into a single extent. However, we usually set PCTINCREASE = 0 while creating tablespaces to
+avoid combinatorial explosion of NEXT EXTENT sizes. A compromise can be made
+by setting PCTINCREASE = 1, the smallest positive integer, so that SMON can operate and, at the same time, the NEXT EXTENT sizes increase very slowly.
+2. Starting with Oracle 7.3 we can use the command
+ALTER TABLESPACE tablespace_name COALESCE;
+to coalesce manually two or more contiguous free extents into a single free extent.
+
+
+
+Loney [2, p. 342–344] defined an index called the free space fragmentation index (FSFI)
+to determine the level of fragmentation. The index is given below:
+
+FSFI = sqrt     largest extent               100
+             ( ---------------   )  *  ---------------------  
+               Sum of all extents      (number of extents) 1/4
+               
+      
+  FSFI should be 100. But as fragmentation occurs, FSFI gradually decreases.
+In general, a tablespace with FSFI < 30 should be further examined for possible defragmentation.
+Run the script in Figure 5.24 to calculate FSFI for each tablespace
+
+
+REM Measure the level of free space fragmentation in tablespaces
+REM Script File Name: My_directory\FSFI.sql
+REM Script File Name: My_directory\FSFI.lst
+REM Purpose: This script measures the fragmentation of
+REM free space in all of the tablespaces in a
+REM database and scores them according to an
+REM index for comparison.
+REM
+COLUMN TODAY NEW_VALUE xTODAY NOPRINT FORMAT A1 TRUNC
+TTITLE LEFT xTODAY -
+RIGHT 'Page ' FORMAT 999 SQL.PNO -
+CENTER 'FSFI Index for EXAMPLE Database' SKIP 2
+BTITLE 'Script File: My_directory \FSFI.sql|
+Spool File: My_directory \FSFI.lst'
+COLUMN TABLESPACE_NAME HEADING 'Tablespace|Name' FORMAT A20
+COLUMN FSFI FORMAT 999.99
+BREAK ON TABLESPACE_NAME SKIP 0
+SET LINESIZE 78
+SET PAGESIZE 41
+SET NEWPAGE 0
+SPOOL My_directory \FSFI.lst
+SELECT TABLESPACE_NAME,
+SQRT(MAX(Blocks)/SUM(Blocks))*
+(100/SQRT(SQRT(COUNT(Blocks)))) FSFI,
+TO_CHAR (SysDate, 'fmMonth ddth, YYYY') TODAY
+FROM DBA_FREE_SPACE
+GROUP BY TABLESPACE_NAME
+ORDER BY 1;
+SPOOL OFF
+
+
+Script for Listing Free Space Extents in Tablespaces
+
+List the File IDs, Block IDs, and the total blocks for each tablespace with FSFI < 30
+and determine how many of their free space extents are contiguous.
+
+
+REM Free Space Listing for Tablespaces in EXAMPLE Database
+REM Script File Name: My_Directory\FREESPACE.sql
+REM Spool File Name My_Directory\FREESPACE.lst
+REM Author: NAME
+REM Date Created: DATE
+REM Purpose: Information on free space extents in all
+REM tablespaces in EXAMPLE database
+REM
+REM
+COLUMN TODAY NEW_VALUE xTODAY NOPRINT FORMAT A1 TRUNC
+TTITLE LEFT xTODAY -
+RIGHT 'Page ' FORMAT 999 SQL.PNO -
+CENTER 'Free Space List - EXAMPLE Database ' SKIP 4
+BTITLE 'Script File: My_Directory\FREESPACE.sql|Spool File:
+My_Directory\FREESPACE.lst'
+COLUMN TABLESPACE_NAME HEADING 'Tablespace|Name' FORMAT A15
+COLUMN FILE_ID HEADING 'File ID' FORMAT 999
+COLUMN BLOCK_ID HEADING 'Block ID' FORMAT 999999999
+COLUMN BLOCKS HEADING 'Total|Blocks' FORMAT 999,999,999
+BREAK ON TABLESPACE_NAME SKIP 2 ON FILE_ID SKIP 1
+SET LINESIZE 78
+SET PAGESIZE 41
+SET NEWPAGE 0
+SPOOL My_Directory\FREESPACE.lst
+SELECT TABLESPACE_NAME, FILE_ID, BLOCK_ID, BLOCKS,
+TO_CHAR (SysDate, 'fmMonth ddth, YYYY') TODAY
+FROM DBA_FREE_SPACE
+ORDER BY TABLESPACE_NAME, FILE_ID, BLOCK_ID;
+SPOOL OFF
+  
+  
+      
+               
+               
+          
 
 
