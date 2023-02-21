@@ -96,4 +96,25 @@ specific business needs such as downstream real-time replication
 
 
 
+Oracle GoldenGate 12 c is a new, improved, and enhanced version of Oracle GoldenGate. Listed here
+
+• Support for Oracle Database 12 c multitenant architecture.
+• Oracle Universal Installer support.
+• Integrated replicat feature for Oracle databases.
+• Coordinated replicat feature for non-Oracle databases.
+• Inclusion of metadata in trail files via a table definition record (TDR). Thus, you are
+no longer required to create definition files containing table metadata on the target
+system.
+• Ease of monitoring channel lags using an automatic heartbeat table.
+• Improved trail file recovery. In the case of a bad trail file or missing trail files, you can
+delete the bad trail files and bounce the extract process. It will automatically rebuild
+the required trail files.
+• Support for quick-and-easy logical design of GoldenGate solutions using
+GoldenGate Studio.
+• Nine-digit trail file sequence to support 1 billion files per trail.
+• Expanded heterogeneous support.
+• Enhanced security with the introduction of a wallet and master key.
+• Support for Big Data.
+• Support for private and public cloud systems.
+• Repair capabilities in Oracle GoldenGate Veridata.
 
