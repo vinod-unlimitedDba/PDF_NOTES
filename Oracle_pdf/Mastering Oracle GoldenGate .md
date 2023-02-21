@@ -4,6 +4,7 @@
 
 Types of Replication
 There are two types of replication based on whether it is performed in a synchronous or asynchronous way.
+      
       • Synchronous replication : Data is replicated as soon as the change occurs on the
       source. This guarantees that at any point in time the target database is an almost
       identical copy of the source database. However, there will be some latency between
@@ -64,6 +65,34 @@ logical - sql apply little different from primary
 • Data encryption : Data can be encrypted at the source and sent over a TCP/IP network to a the target system where it is decrypted and then applied      to the target database.
 • Routing and compression : Since Oracle GoldenGate uses TCP/IP network for routing information, it can compress and route information in different     database topologies irrespective of geographical distances.
 • Deferred apply : The user has the option for both immediate and deferred application of transactional changes on the target system.
+
+most popular business requirements where you can implement and take advantage of
+Oracle GoldenGate:
+• The business needs load balancing in a production environment. An active-active configuration of the source and the target can help balance the load     among multiple database systems.
+• The business wants to implement query offloading. Long-running read-only transactions can be offloaded to an active standby database and thus           improve the overall performance of production systems.
+• The business wants to create and manage a live, active standby database with up-to the-minute data. This minimizes recovery time for mission-          critical systems.
+• The business needs to integrate an Oracle database with a non-Oracle database or a non-Oracle database with another non-Oracle database.
+• The business requires zero downtime migrations and upgrades.
+
+
+Oracle GoldenGate vs. Data Guard
+------------------------
+
+
+Oracle Data Guard is a popular replication solution implemented across industries. Oracle GoldenGate is
+not a replacement for Oracle Data Guard and is sometimes used along with Oracle Data Guard to support
+specific business needs such as downstream real-time replication
+
+|oralce GG |vs Oracle DG|
+---------- | ----------
+|Oracle GoldenGate supports multiple replication topologies. | Oracle Data Guard supports simple one-way replication only.|
+|The target database can be read-write. | The physical standby database is read-only when using an Active Data Guard configuration. In the rest of the                                            other cases, to make your standby database open and read-only|
+|I/O overhead and capture processing overhead on primary databases.| There is no I/O overhead or capture processing overhead on the primary.|
+|Few data types are not supported.| There is no restriction of data types.|
+|Oracle GoldenGate comes as middleware installed separately from the Oracle database.| It is integrated with Oracle database software.|
+|Oracle GoldenGate is a heterogeneous player supporting a wide range of database environments.| It supports replication only between Oracle databases.|
+|The source and target databases can be of different versions.| The standby database used for replication should be the same version as the primaryOracle database.|
+|The Oracle GoldenGate source and target databases can be on different OS platforms.|Oracle Data Guard requires both the primary and standby databases                                                                                      to be on the same OS platform.|
 
 
 
