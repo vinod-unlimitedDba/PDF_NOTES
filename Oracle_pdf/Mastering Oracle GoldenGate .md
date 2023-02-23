@@ -118,3 +118,285 @@ GoldenGate Studio.
 • Support for private and public cloud systems.
 • Repair capabilities in Oracle GoldenGate Veridata.
 
+
+CHAPTER 2  Architecture
+----------------------
+
+Basic Oracle GoldenGate architecture. The extract process captures database
+changes from the database transaction logs and writes them to the source trails. These source trails are
+pumped (or passed) by data pumps to the target system where a dynamic collector process writes them
+to disk as remote trails. A replicat reads these remote trails and writes the database changes on the target
+system.
+
+![image](https://user-images.githubusercontent.com/108070848/220599988-84b161c5-fff0-4291-8372-3a5a38fec28b.png)
+
+Oracle GoldenGate consists of following components:
+• Extract
+• Data pump
+• Replicat
+• Trails
+• Collector
+• Manager
+• Checkpoints
+
+
+Extract
+An extract is a capture process that captures an insert, update, or delete performed on a source schema. An
+extract process can also be configured to capture DDL changes performed on the source DB and send them
+across the target DB in the form of trails (or trail files) routed across a TCP/IP network.
+
+
+There are primarily three types of extracts.
+• Local extracts : This is the extract process that captures changes from database
+transaction logs and writes the changes in local trail files.
+• Data pumps : This is the extract process that reads the local trails generated from
+the local extracts and sends them to the target server. Having a data pump in your
+GoldenGate configuration is highly recommended. The advantages of having a data
+pump are discussed in the following section.
+• Initial load extracts : This type of extract process is configured for the initial load
+of the data from the source to the target system. This extract is not configured to
+capture changes from database transaction logs, but instead it captures all existing
+data in the source table and loads it directly into the target table.
+
+
+The extract process can be configured to capture changes as a single process to capture all tables or can
+be divided into multiple extract processes with each extract process capturing changes for a set of tables. An
+extract process can also be configured to capture changes for all tables in the entire schema in one single
+extract using a wildcard.
+
+
+Data Pump
+---------
+Data pumps are similar to GoldenGate extract processes. These are the secondary extract processes that
+read from the source trails written by the local extract and pump them to the target over a TCP/IP network.
+
+data pumps is not absolutely necessary but is highly recommended. 
+
+If you do not have data pumps
+configured, extracts must be configured to send the trails to the target system. The following are some of the
+advantages of having a data pump:
+
+• Protection against losing connectivity to target system : Assume that your target  system has gone down or there is a network connectivity issue. 
+  In such a scenario,  not having a data pump will mean the extract process directly tries to send trails to an unreachable target host. 
+  The extract process in this situation will abend since it is  no longer able to communicate and send trails to the target host.
+
+Now assume that you have data pumps reading from source trails and pumping the trails to target over a TCP/IP network. 
+In case of any connectivity issue to target system, the data pump will abend (stop working) as it will not be able to communicate to the target system. But you still have extracts running on the source and capturing and writing the changes in form of source trails on the source system.
+
+• Filter and transformation : When you are filtering and transforming data, it is good to do this with the data pump as it may greatly reduce the unnecessary data being sent over the network and then later filtered at the target system.
+
+• One-to-many replication: If you have multiple targets, you can configure individual data pumps for each target. When one target goes down, only the corresponding data pump is affected, and the other target systems continue to receive data.
+
+• Many-to-one replication : In a configuration of data being consolidated from many sources to one target, data pumps allow you to store extracted     trails at the source database itself and send one trail at a time to the target.
+
+
+Replicat
+---------------
+The extract process captures changes on the source system and writes them to local trail files. These trail files
+are then sent to the target system over a TCP/IP network. A replicat is the delivery process that is configured
+on the target system to read the trails and apply the changes to the target system. The changes are applied
+in the database in same order as they were committed on the source system.
+
+two types of extracts based on how and what changes are captured.
+
+• Initial load replicat : An initial load replicat is a special replicat that is configured for the initial load of the target tables from the source tables. These replicats are used only one time during the initial load and can be deleted once their job is done.
+
+• Replicat for change synchronization: These replicats are configured for reading changes from the remote trails and applying these changes to the target database by reconstructing the captured DML or DDL.
+
+
+Trails
+-------------
+
+The extract process captures and writes the committed transactions sequentially into files called trails . These
+trails are then sent across the network where they are written on the remote machine before being read by
+the replicat.
+
+
+There are two types of trails.
+• Source trails : Trails written by the extract process on the local staging area are called source trails or local trails .
+
+• Remote trails: Source trails are received on the target system by a background process called a collector and written to a similar trails called remote trails.These remote trails are the one that will be read by the replicat, and changes will be written to the target database.
+
+Collector
+-------------
+
+The collector is a process that runs in the background on the target system,
+receives trails from extracts, and writes them locally into remote trails for processing by the replicat.
+
+dynamic port configuration, when identifying a connection request from the extract to the manager, the collector scans
+an available port and sends this port information to the manager for establishing a connection with the extract process.
+
+Manager
+----------
+The manager is the main process that runs and controls all other Oracle GoldenGate processes and components.
+It contains control information for processes configured on the specific Oracle GoldenGate instance.
+
+• Maintains the port number for communication over the network
+• Starts and stops the extracts and replicat
+• Generates reports for the processes
+• Contains control parameters like “Purge old trails,” and so on
+• Manages trail files
+
+
+Checkpoints
+--------------------------------------
+Checkpoints are the way GoldenGate keeps track of which transaction it has replicated. GoldenGate extracts
+create checkpoints for their position in the source database and trail.
+
+extract captures only committed transactions, it tracks all the open transactions. Once a transaction is committed, extracts look behind the oldest
+open transaction position. This information is written by the extract on the disk in the form of checkpoint files.
+
+replicat, on the other hand, creates checkpoints for its position in the trail. This information is
+more effectively stored in checkpoint tables created in the target database. GoldenGate also stores this
+information on the disk in the form of checkpoint files.
+
+
+
+The flexible and decoupled architecture of GoldenGate allows it to support a varied range of replication topologies. 
+The following are some of the most common supported replication topologies:
+• Unidirectional replication
+• Bidirectional replication
+• One-to-many replication
+• Many-to-one replication
+• Peer-to-peer replication
+
+Unidirectional Replication
+----------------------------
+A unidirectional replication between a source and a target is the simplest replication topology. Any database
+change on the source is replicated to the target. In this architecture, the target is read-only, and the changes
+are made only at the source database.
+
+![image](https://user-images.githubusercontent.com/108070848/220911954-260c2ae4-9442-4239-bc57-be0c47f8b0b0.png)
+
+
+When to Use Unidirectional Replication?
+The following are some of the business scenarios when you would need to implement a simple
+unidirectional replication between two database systems.
+• To maintain a hot standby database for failover purpose
+• For query offloading on a standby database
+• For zero-downtime database upgrades or migration
+
+
+components of Oracle GoldenGate in a unidirectional replication configuration:
+
+
+![image](https://user-images.githubusercontent.com/108070848/220912179-d745d104-79d8-458e-bcc6-049f459df733.png)
+
+
+Bidirectional Replication
+----------------------------------
+In a bidirectional replication configuration, database changes may occur on either of the two systems. Either
+of the two systems can be the source or the destination. This is also known as two-way replication or an
+active-active replication since both the systems are active and receive transaction changes.
+
+A bidirectional active-active configuration should have identical objects and data. 
+Transactions can be performed on either database and are replicated to the other database by Oracle GoldenGate for consistency
+
+
+![image](https://user-images.githubusercontent.com/108070848/220912420-7f2d1c07-c4a3-4c96-8bb2-99a22a8ab9bb.png)
+
+
+Limitations of Bidirectional Configuration
+----------------------
+For data consistency, often one of the two sites is considered to be the master.
+Truncates are not supported in bidirectional replication. This means you cannot allow truncate operations to replicated from any of the
+two sites.
+
+
+When to Use Bidirectional Replication?
+
+• Active-active high availability system : In a high availability configuration, if one database server crashes because of software or hardware failure, the application can be restarted to point another database without having to wait for the crashed
+database to be fixed. 
+
+• Load sharing : This configuration is used for load sharing among the two databases. This boosts the overall database system performance to a higher
+grade. To allow load sharing without any changes to the application and database configuration, the two databases participating in load sharing should
+be identical.
+
+
+• Disaster tolerance : A bidirectional replication configuration can be used for disaster tolerance as well. When one database goes down, the other database continues to support application. Once the failed database is back, it is synchronized and made consistent with the other database.
+
+• Zero-downtime upgrades : A bidirectional replication configuration can be used for database upgrades with zero downtime involved. You can set up bidirectional replication between the existing and new databases.
+
+
+![image](https://user-images.githubusercontent.com/108070848/220913967-55805036-9558-42e7-9bf7-99ebfff2a021.png)
+
+
+One-to-Many Replication
+---------------------
+In this configuration, a source database is synchronized across multiple target databases. This can include
+both homogeneous and heterogeneous systems. Data from the source is captured and manipulated if
+required and is sent across multiple target databases. It is significantly important to use data pumps in this
+configuration for fault tolerance. If one target goes down, the corresponding data pump will get affected,
+but other data pumps can continue sending data to the remaining target systems.
+
+
+![image](https://user-images.githubusercontent.com/108070848/220914201-ae799fc1-9d71-4739-9b1c-e70b2652e5ff.png)
+
+When to Use One-to-Many Replication?
+
+• For reporting purpose, when source data is to be distributed across multiple target databases
+• For multiple standby database to serve as backups in case of the failure of production database
+
+![image](https://user-images.githubusercontent.com/108070848/220914355-c61f0542-d73b-459e-8351-b1bcf6e7a7cf.png)
+
+
+
+Many-to-One Replication
+---------------------------
+Data is sent from multiple source databases to one repository target database. This kind of many-to-one
+replication can be between both homogeneous and heterogeneous databases. Figure 2-8 shows a simple
+view of many-to-one replication between databases.
+
+![image](https://user-images.githubusercontent.com/108070848/220914552-8c26e42f-2d9f-4d93-a58e-fdf65af3c86f.png)
+
+When to Use Many-to-One Replication?
+This configuration is primarily needed in a data warehousing system. Multiple source systems send data
+to a single data warehouse system. This can be effectively achieved in real time using Oracle GoldenGate
+
+
+![image](https://user-images.githubusercontent.com/108070848/220914696-9bc72f28-7beb-4362-a41e-802a32b81cb8.png)
+
+
+Peer-to-Peer Replication
+-------------------------
+Peer-to-peer or multimaster replication contains multiple master sites. It is also called an update anywhere model, 
+where changes made on one site are propagated to all other sites in the architecture. This ensures global transaction concurrency and data integrity
+
+
+![image](https://user-images.githubusercontent.com/108070848/220914931-651613f7-4d74-49e3-bbc8-b827eee53d84.png)
+
+
+When to Use Peer-to-Peer Replication?
+
+• Localized data access : One major business application of peer-to-peer configuration
+is for providing localized data access across geographical locations
+
+• Disaster tolerance : Such a configuration can be used for disaster tolerance as well. When one database goes down,
+the other databases continue to support the application.
+
+• For an active-active high availability system : In a configuration where both the databases are active and have an identical set of objects and data, the application user can use either of the databases for business processing.
+
+• Load sharing : This configuration is used for load sharing among each master site. This boosts the overall database system performance to a higher grade. 
+
+![image](https://user-images.githubusercontent.com/108070848/220915324-bd33109d-4c5b-4f9a-b042-fadea170ebe3.png)
+
+
+
+CHAPTER 3 Oracle GoldenGate Pre-installation Tasks
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
