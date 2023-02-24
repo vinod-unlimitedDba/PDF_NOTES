@@ -383,12 +383,185 @@ the other databases continue to support the application.
 
 
 CHAPTER 3 Oracle GoldenGate Pre-installation Tasks
+-------------------------------
+
+##### Configuring Your Database and Server for Oracle GoldenGate
+
+Minimum requirement 
+
+Ram 100MB and also depends on How much bulk transaction are doing
+
+DisK 500 MB
+
+first step is to configure environment variables specific to your database and operating system.
+If you have more than one database instance on the same server, then you would need to set ORACLE_ HOME and ORACLE_SID for each GoldenGate process using SETENV statements in parameter files of each Oracle GoldenGate process.
+            
+            SETENV (ORACLE_HOME = “oracle home directory path here”)
+            SETENV (ORACLE_SID = “SID”)
+
+Oracle GoldenGate processes use the database shared libraries. You will need to set the shared library variable for this purpose.
+
+Set LD_LIBRARY_PATH if you are using HP-UX, Linux, or Sun Solaris OS and LIBPATH if you are using the IBM AIX operating system.
+       
+            export PATH=$PATH:/app/ggs/tiger/:.
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/app/oracle/product/orcl/lib/
+            
+ Enabling supplemental logging in Oracle databases creates a supplemental log group for each table; this log group contains the list of columns
+for which supplemental logging will be captured.       
+
+To check supplement logging hapenning or not in the database 
+
+        SELECT supplemental_log_data_min, force_logging FROM v$database;
+
+can only set supplemental minimal logging and add table/schema-level supplemental logging from the GoldenGate Software Command Interface (GGSCI).
+This is especially recommended when only a few tables/schema are to be replicated
+      SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+Optionally, you can enable force logging for the entire database.
+      SQL> ALTER DATABASE FORCE LOGGING;
+After changing logging option, either FORCE LOGGING or MINIMAL SUPPLEMENTAL LOGGING , you must switch log files, as follows:
+      SQL> ALTER SYSTEM SWITCH LOGFILE;
+
+You must enable GoldenGate replication before you can add supplemental logging information for Oracle GoldenGate. Run the following using the sysdba user:
+      SQL> ALTER SYSTEM SET ENABLE_GOLDENGATE_REPLICATION=TRUE;
+System altered.
+
+Log in to GGSCI and enable supplemental logging for the GoldenGate table/schema, as follows:
+            GGSCI> DBLOGIN USERID user_name, PASSWORD password
+            GGSCI> ADD SCHEMATRANDATA schema_name ALLCOLS
+or as follows:
+            GGSCI> ADD SCHEMATRANDATA schema_name NOSCHEDULINGCOLS
+
+To enable logging for particular tables, use ADD TRANDATA
+
+      GGSCI> ADD TRANDATA schema_name.table_name
+      
+      
+Enable Logging for Microsoft SQL Server Databases
+----------------------------
+If your source database is Microsoft SQL Server, make sure it is set to full recovery model. Log in to GGSCI and enable supplemental logging.
+                  
+                  GGSCI> DBLOGIN SOURCEDB <dsn>, USERID user_name, PASSWORD password
+                  GGSCI> ADD TRANDATA owner_name.table_name      
+previous command creates a secondary truncation log point in the SQL Server database.
+
+Use the MANAGESECONDARYTRUNCATIONPOINT command for managing the secondary truncation log point
+in the extract process.
+      TRANLOGOPTIONS MANAGESECONDARYTRUNCATIONPOINT
+      
+ Define the interval for moving the secondary log point in SQL Server as shown here:
+EXEC sp_repldone @xactid = NULL, @xact_segno = NULL, @numtrans = 0, @time = 0, @reset = 1
+
+Enable logging for an IBM DB2 Database on the Linux/Unix/Windows platform.
+The first step is to do one of the following; either enable USEREXIT or use LOGRETAIN RECOVERY :
+            db2 update db cfg for database_name using USEREXIT ON
+            or
+            db2 update db cfg for database_name using LOGRETAIN RECOVERY
+Next, set your source database to retain the transaction log for roll-forward recovery.
+            db2 update db cfg for database_name using LOGARCHMETH1 LOGRETAIN
+            db2 update db cfg for database_name using LOGARCHMETH2 OFF
+            or
+            db2 update db cfg for database_name using LOGARCHMETH1 DISK
+            db2 update db cfg for database_name using LOGARCHMETH2 TSM
+Verify the log retention parameters.
+            db2 connect to database_name USER user_name using password
+            db2 get db cfg for database_name
+   
+Before you restart extract process, ensure that you have taken a full backup of the database.
+db2 backup db database_name to device_name
+You will also need to set the OVERFLOWLOGPATH parameter to the archive log directory.
+Log in to GGSCI and enable supplemental logging for the tables to be replicated.
+GGSCI> DBLOGIN SOURCEDB dsn, USERID user_name , PASSWORD password
+
+
+Supported Data Types for Oracle Databases
+
+• Abstract data type
+• BASICFILE Lob
+• BINARY DOUBLE
+• BINARY FLOAT
+• BLOB
+• CHAR
+• CLOB
+• Clustered table
+• DATE
+• DATETIME
+• Index organized tables
+• LONG
+• LONG RAW
+• Materialized view
+• NCHAR
+• NCLOB
+• Nested tables
+• NUMBER
+• NVARCHAR2
+• Object table
+• PDML
+• RAW
+• SECUREFILE Lob
+• Sequence
+• TIMESTAMP
+• Transparent data encryption
+• VARCHAR2
+• VARRAY
+• XA
+• XML stored as CLOB / Binary
+
+
+Oracle GoldenGate supports DDL operations approximately up to 2 MB for the following Oracle
+objects:
+• Cluster                               • Sequence
+• Function                              • Synonym
+• Index                                 • Table
+• Materialized view                     • Tablespace
+• Package                               • Trigger
+• Procedure                             • Type
+• Role                                  • User
+• View
+
+Supported Data Types for SQL Server Databases
+Oracle GoldenGate supports all SQL Server data types except SQL_VARIANT .
+Supported Data Types for DB2 Databases on LUW
+On the Linux, Unix, or Windows platform, Oracle GoldenGate supports all IBM DB2 data types except the
+XML data type, user-defined data types, and negative dates.
+Supported Data Types for DB2 Databases on z/OS
+On a z/OS platform, Oracle GoldenGate supports all DB2 data types except XML, user-defined data types,
+negative dates, and DECFLOAT .
 
 
 
 
 
 
+Supported Data Types for SQL Server Databases
+Oracle GoldenGate supports all SQL Server data types except SQL_VARIANT .
+Supported Data Types for DB2 Databases on LUW
+On the Linux, Unix, or Windows platform, Oracle GoldenGate supports all IBM DB2 data types except the
+XML data type, user-defined data types, and negative dates.
+Supported Data Types for DB2 Databases on z/OS
+On a z/OS platform, Oracle GoldenGate supports all DB2 data types except XML, user-defined data types,
+negative dates, and DECFLOAT .
+
+
+
+
+SEQUENCES are supported in an active-passive replication structure. The source and target sequence
+must have identical cache size and incremental interval values.
+DDL operations approximately up to 2 MB are supported on the following Oracle objects:
+
+The TRUNCATE statement is supported, however, in active-active bidirectional replication. TRUNCATES must always originate on the same server.
+No DDL operations are supported on Oracle reserved schemas.
+
+   
+            
+
+
+      
+
+ 
+
+
+            
+            
 
 
 
