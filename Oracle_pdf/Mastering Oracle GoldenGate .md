@@ -551,19 +551,71 @@ DDL operations approximately up to 2 MB are supported on the following Oracle ob
 The TRUNCATE statement is supported, however, in active-active bidirectional replication. TRUNCATES must always originate on the same server.
 No DDL operations are supported on Oracle reserved schemas.
 
-   
-            
+Designing Your GoldenGate Replication Setup
+------
+An important pre-step of setting up Oracle GoldenGate replication is to understand the standard naming
+conventions and best practices while designing your setup.   
 
+PREMISSION REQUIRED FOR ogg USER 
 
+SQL> exec dbms_goldengate_auth.grant_admin_privilege('ggsuser')
+
+Optionally, you can specify whether you are providing the privilege to the capture or apply process as shown here:
+
+SQL> exec dbms_goldengate_auth.grant_admin_privilege('ggsuser','capture');
+SQL> exec dbms_goldengate_auth.grant_admin_privilege('ggsuser','apply');
       
 
+OGG User Permissions in Sybase Databases In the Sybase ASE database, you can either grant system administration role sa_role to the GoldenGate user
+or more specifically grant replication_role as shown here:
+
+isql> sp_role 'grant', replication_role, ‘ggsuser’
+
+or shown here:
+
+isql> use database_name
+isql> go
+isql> grant role replication_role to ggsuser
+isql> go
  
 
-
+OGG User Permissions in IBM DB2 Databases Privileges required by the Oracle GoldenGate user are managed by the SYSADM or DBADM roles in the IBM DB2
+database.
+        
+        SQL> grant DBADM to ggsuser;
+        SQL> grant connect to ggsuser;
+        SQL> grant select, insert, update, delete on table_name to ggsuser;
             
-            
+OGG User Permissions in MySQL Databases The Oracle GoldenGate user for MySQL databases requires read permission on the INFORMATION_SCHEMA
+database. Apart from this, an extract requires the following privileges:
+• SELECT ANY TABLE
+• Read and Execute on the MySQL configuration file and its directory
+• Read and Execute on binary logs
+• Read and Execute on the tmp directory
 
 
+##### CHAPTER 4 Installing Oracle GoldenGate
+-------------------------------------------------
+
+Setting Up Environmental Variables We discussed in the previous chapter setting up environment variables as a pre-installation step. Make sure
+your Oracle database and Oracle GoldenGate environment variables are set as follows:
+
+            export ORACLE_BASE=/app/oracle
+            export ORACLE_HOME=$ORACLE_BASE/product/12.1.0.2/dbhome_1
+            export ORACLE_SID=orcl1
+            export PATH=$PATH:/app/ggs/tiger/:.
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib/
+
+Supplemental logs are required only by extract processes to capture transactions for replication.
+Enable minimal supplemental logging at the database level.
+        
+        SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+        
+        
+  Log in to GGSCI and enable supplemental logging for the GoldenGate table/schema.
+GGSCI> DBLOGIN USERID tiger, PASSWORD tiger123_
+Successfully logged into database
+GGSCI> ADD SCHEMATRANDATA tiger ALLCOLS      
 
 
 
