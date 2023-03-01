@@ -613,15 +613,133 @@ Enable minimal supplemental logging at the database level.
         
         
   Log in to GGSCI and enable supplemental logging for the GoldenGate table/schema.
-GGSCI> DBLOGIN USERID tiger, PASSWORD tiger123_
-Successfully logged into database
-GGSCI> ADD SCHEMATRANDATA tiger ALLCOLS      
+            GGSCI> DBLOGIN USERID tiger, PASSWORD tiger123_
+            Successfully logged into database
+            GGSCI> ADD SCHEMATRANDATA tiger ALLCOLS      
+
+
+Installing Oracle GoldenGate on Unix/Linux
+--------------
+
+
+Step 1: Log In as the Linux Superuser
+              su - oracle
+              
+Step 2: Navigate to the GoldenGate Directory
+
+              cd /u01/apps/ogg/appname/
+Step 3: Copy or FTP the GoldenGate Software File from the Local System or Remote Server
+
+      Place the .zip file in the /app/ggs/tiger directory where Oracle GoldenGate is to be installed. If you have a compressed .zip file, unzip the file. 
+      You can issue following command to unzip the compressed GoldenGate software you downloaded from the Oracle web site:
+        
+              unzip 121200_fbo_ggs_Linux_x64_shiphome.zip
+              
+ Step 4: Locate the Installer
+ 
+            For Oracle GoldenGate 12, Oracle has included a GUI installer that takes care of configuring your
+            manager process and creating Oracle GoldenGate subdirectories.
+            Navigate to Disk1 from the unzipped contents, as shown here:
+                        [oracle@ravin-ravinpc tiger]$ cd /app/ggs/tiger/fbo_ggs_Linux_x64_shiphome/Disk1
+                        [oracle@ravin-ravinpc Disk1]$ ls -lrt
+                        total 12
+                        drwxr-xr-x. 4 oracle oinstall 4096 Apr 29 17:15 install
+                        drwxr-xr-x. 2 oracle oinstall 24 Apr 29 17:15 response
+                        -rwxr-xr-x. 1 oracle oinstall 918 Apr 29 17:15 runInstaller
+                        drwxr-xr-x. 11 oracle oinstall 4096 Apr 29 17:16 stage
+
+Step 5: Begin Installation
+
+      export DISPLAY=<your windows machine IP where X server is running>:0.0
+      [oracle@ravin-ravinpc tiger]$ ./runInstaller
+      
+      Chose for ORacle GG for 12c or 11g  click next
+      
+ Step 6:  select software location
+ 
+ click on install
+ 
+ Once install completed successfull installation POPS UP.
+ 
+ 
+ 
+ 
+ CONFIGURE MANAGER 
+ ----------
+ 
+from server export ORACLE_HOME,OGG_HOME , LIBARARY_PATH 
+
+Oracle_server > ./ggsci
+
+it will enter into the ggsci prompt you can golden gate commands
+
+GGSCI>  Status all
+
+GGSCI > EDIT PARAMS MGR
+         PORT 7809
+       AUTOSTART E*
+       LAGINFOMINUTES 5
+       LAGCRITICALMINUTES 5
+
+Only the PORT 7809 part is mandatory for getting your manager process running.
+LAGINFOMINUTES specifies how often lag information is reported to the error log file ggserror.log .
+AUTOSTART automatically starts the specified extract/replicat process when the manager starts.
+Here we have specified to start all processes (channels) starting with E when the manager starts
+
+
+Step 7: Start/Stop the Manager
+       
+        GGSCI> START MGR
+        GGSCI> STOP MGR
+        GGSCT> view report mgr
+      
+      
+Step 8: Check Supplemental Logging for the Database
+ 
+SELECT supplemental_log_data_min, force_logging FROM v$database;
+
+If both of the previous are already YES , your database is already configured for the logging needed by
+Oracle GoldenGate. Setting up force logging is optional; you can only set supplemental minimal logging and
+add table/schema-level supplemental logging from GGSCI.
+ 
+       SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+Optionally, you can enable force logging for the entire database.
+      SQL> ALTER DATABASE FORCE LOGGING
+
+After changing the logging option, either FORCE logging or MINIMAL SUPPLEMENTAL LOGGING , you must switch log file.
+
+      SQL> ALTER SYSTEM SWITCH LOGFILE;
+      
+      
+Step 11: Add Extracts
+
+            GGSCI> ADD EXTRACT ETTND001, TRANLOG, BEGIN NOW
+            Or execute this
+            GGSCI> ADD EXTRACT ETTND001, TRANLOG, BEGIN 2015-11-10 04:03
+            
+            
+            GGSCI> ADD RMTTRAIL /u01/app/ggs/appname/t1, EXTRACT ETTND001, MEGABYTES 60
+            
+             GGSCI> EDIT PARAMS ETTND001
+
+Add the following entries in the parameter file:
+            EXTRACT ETTND001
+            USERID TIGER, PASSWORD tiger123_
+            RMTHOST node2.ravin-pc.com, MGRPORT 7809
+            RMTTRAIL /app/ggs/fox/dirdat/f1
+            TABLE TIGER.ORDER_DTL;   
+            
+            
+      
+      
+      
+      
+      
+      
 
 
 
 
 
-
-
-
+ 
 
