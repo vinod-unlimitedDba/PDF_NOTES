@@ -730,14 +730,170 @@ Add the following entries in the parameter file:
             TABLE TIGER.ORDER_DTL;   
             
             
-      
-      
-      
-      
-      
-      
+Step 13: Add the Replicat
+        GGSCI> ADD REPLICAT RFDLD001, EXTTRAIL /app/ggs/fox/dirdat/f1, NODBCHECKPOINT
+            GGSCI> EDIT PARAMS RFDLD001
+ Add the following entries in the parameter file for the replicat:
+```
+REPLICAT RFDLD001
+PURGEOLDEXTRACTS
+ASSUMETARGETDEFS
+DISCARDFILE /app/ggs/fox/dirrpt/rfdld001.dsc, PURGE, MEGABYTES 599
+USERID fox, PASSWORD fox123_
+MAP TIGER.ORDER_DTL, TARGET FOX.ORDER_DTL;
+ ```
+ 
+ Step 14: Create the Definition File
+ 
+If your source and target table structure and name are different, you need to create a definition file on your
+source and transfer it to your target. This definition file is then referred to by the Oracle GoldenGate replicat
+process for mapping the source and target tables and applying the replicated transactions.
+            
+            
+ DEFSFILE /app/ggs/tiger/dirdef/rfdld001.def
+USERID TIGER, PASSWORD tiger123_
+TABLE TIGER.ORDER_DTL;
 
 
+Run the following command from the OGG home directory /app/ggs/tiger . This will generate the definition file.
+
+defgen paramfile dirprm/temp.prm
+
+
+Copy /app/ggs/tiger/dirdef/rfdl001.def from the source machine to /app/ggs/fox/dirdef/rfdl001.def on the target machine.
+
+Remove ASSUMETARGETDEFS and add the following to your replicat parameter file:
+ SOURCEDEFS /app/ggs/fox/dirdef/rfdld001.def
+
+  Step 15: Enable Supplemental Logging for Oracle GoldenGate
+
+Log in to GGSCI on the source and enable supplemental logging for GoldenGate table/schema. This needs
+to be done only on the capture side. Replicat processes do not need supplemental logging.    
+      
+      
+                  GGSCI> DBLOGIN USERID tiger, PASSWORD tiger123_
+                  GGSCI> ADD SCHEMATRANDATA tiger ALLCOLS
+                  or
+                  GGSCI> ADD SCHEMATRANDATA tiger NOSCHEDULINGCOLS      
+      
+for only specific table
+      
+      GGSCI> ADD TRANDATA tiger.order_dtl
+      
+ Step 16: Initial Data Synchronization
+All the existing source data of tables to be replicated needs to be copied to the target database in order for
+any replication to succeed. There is more than one way that data copying can be done. The copy method
+used is dependent on the volume of data in the source database that needs to be copied over. 
+
+Setting Up the Initial Extract Process on Source
+
+initial load extract process by executing the following command. Here, SOURCEISTABLE informs
+Oracle GoldenGate that the extract process is the initial load extract and the entire table
+
+
+      GGSCI> ADD EXTRACT INITEXT1, SOURCEISTABLE
+
+Edit the extract parameter file.
+##### GGSCI> EDIT PARAMS INITEXT1
+            EXTRACT INITEXT1
+            RMTHOST node2.ravin-pc.com, MGRPORT 7809
+            RMTTASK REPLICAT, GROUP INITREP1
+            USERID tiger, PASSWORD tiger123_
+            TABLE TIGER.ORDER_DTL;
+
+Setting Up the Initial Replicat Process on the Target
+
+initial load replicat on the target machine’s GoldenGate instance, SPECIALRUN informs GoldenGate
+that the replicat process is the initial load replicat and will process trails received from an initial load extract
+
+      GGSCI> ADD REPLICAT INITREP1, SPECIALRUN
+
+##### GGSCI> EDIT PARAMS INITREP1
+    
+      REPLICAT INITREP1
+      ASSUMETARGETDEFS
+      DISCARDFILE /app/ggs/fox/dirrpt/initrep1.dsc, MEGABYTES 599, append
+      USERID FOX, PASSWORD fox123_
+      MAP TIGER.ORDER_DTL, TARGET FOX.ORDER_DTL;
+
+Silent Installation
+-----------------------
+
+Before version 12. x of Oracle GoldenGate, there was the option to simply uncompress into the directory
+where you want to install GoldenGate. OUI replaced this with a GUI installer that does a couple of
+background pre- and post-setups to simply the overall installation.
+
+
+This installation method will require you to configure a response file first. Once you unzip the
+compressed installer binaries, go to the response directory to find the response file.
+
+[oracle@ravin fox]$ unzip ./121200_fbo_ggs_Linux_x64_shiphome.zip –d ggate
+[oracle@ravin fox]$ cd /app/ggs/fox/fbo_ggs_Linux_x64_shiphome/Disk1/response
+
+
+The response file name provided with the installer is oggcore.rsp .
+
+INSTALL_OPTION=
+ORA12c or ORA11g
+
+SOFTWARE_LOCATION=
+Where to install the software
+
+START_MANAGER=
+TRUE or FALSE
+
+MANAGER_PORT=
+Any port number, default 7809
+
+DATABASE_LOCATION=
+Set to $ORACLE_HOME
+
+INVENTORY_LOCATION=
+Specify location for oraInventory
+
+UNIX_GROUP_NAME=
+Group that should own the installation of Golden Gate
+
+
+../runInstaller -silent -responseFile /app/ggs/fox/fbo_ggs_Linux_x64_shiphome/Disk1/response/oggcore.rsp
+
+
+Handling Character Set
+----------
+
+Oracle GoldenGate provides globalization support, which means data can be processed in its own native language.
+
+Before discussing in detail how Oracle GoldenGate preserves character sets when out-of-sync source
+and target database character sets are different,
+which lists some of the Oracle
+character sets. There are about 200 Oracle character sets currently supported by Oracle GoldenGate.
+
+
+Using CHARSET
+By default, the parameter files of Oracle GoldenGate are created using the character set of the operating
+system. If you need to use a different character set to support characters not supported by the operating
+system character set, you can specify the CHARSET parameter in your EXTRACT , REPLICAT , MANAGER , DEFGEN ,
+and GLOBALS parameter files
+
+CHARSET character_set_name
+
+
+Using Escape Sequences
+--
+To use a character in your parameter file that is not supported by your operating system character set, you
+can use an escape sequence in this format: \<escape sequence type>
+
+• Unicode escape sequence : \uFFFF
+• Octal escape sequence : \377
+• Hexadecimal escape sequence : \xFF
+
+TABLE TIGER."\u3000XYZ";
+
+
+Using NLS_LANG
+You can also use the NLS_LANG parameter in your extract or replicat parameter file to take care of the
+character set conversion.
+setenv (NLS_LANG="AMERICAN_AMERICA.AL32UTF8")
 
 
 
