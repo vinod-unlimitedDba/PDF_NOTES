@@ -896,6 +896,254 @@ character set conversion.
 setenv (NLS_LANG="AMERICAN_AMERICA.AL32UTF8")
 
 
+CHAPTER 5 Classic vs. Integrated Capture and Apply
+-----------------
+
+the role of the capture and delivery processes in Oracle GoldenGate replication. 
+The capture process in Oracle GoldenGate is called extract , and the apply process is called replicat .
+
+Until OGG version 11 you had only the classic capture and delivery modes. from 11.2 introduced an optional and efficient processing mode, namely, integrated capture. Later OGG 12 introduced integrated apply as well.
+
+Integrated refers to the processing capability being integrated with database features. This is native to Oracle database, so if you are using any non-
+Oracle database, then you will not be able to use integrated capture and apply.
+
+![image](https://user-images.githubusercontent.com/108070848/223398180-d429b88f-ceca-4a54-8d9b-19437c9e70a3.png)
+
+
+Classic Capture
+-------
+
+In the classic capture mode, data changes are captured from the Oracle redo logs/archive logs. This is
+the initial capture mode developed and used by GoldenGate Software Inc. The classic capture process
+is supported for all databases that are supported by Oracle GoldenGate
+
+
+![image](https://user-images.githubusercontent.com/108070848/223398428-4916f8f5-12f3-4fa8-86d6-57f7d787f5b6.png)
+
+Integrated Capture
+--------
+This capture mode is specific to Oracle Database 11.2 onward. In the integrated capture mode, the extract
+process communicates with the database log mining server and receives information in the form of a logical
+change record (LCR). The database log mining server mines redo log and captures changes in the form of an
+LCR.
+
+
+![image](https://user-images.githubusercontent.com/108070848/223398621-6ade76b6-a785-4655-a576-1386d3008c4a.png)
+
+
+Integrated capture was recently introduced and is a more efficient mode of data capture.
+Let’s discuss a few benefits of integrated capture mode compared to classic capture mode, as listed here:
+• It supports more Oracle data types compared to classic capture mode.
+• Interaction with the database log mining server allows you to switch automatically between copies of archived logs and mirror images of redo logs.
+  This is useful in the case of disk block corruption of the archived/redo logs.
+• It supports a multitenant container database containing multiple pluggable databases. This is not possible with classic capture.
+• It has easy configuration for Oracle RAC and ASM.
+• It requires Oracle Database 11.2.0.3 or higher.
+• It requires more memory, and hence you need to increase the size of MEMORY_TARGET and STREAMS_POOL .
+
+
+Integrated Capture Modes
+Integrated capture supports two types of configuration:
+• On-source capture : The capture process runs on the actual source database server.
+Changes will be captured locally and routed to the target in real time.
+
+
+• Downstream capture : The capture process runs on a remote database server. The Log
+Writer (LGWR) or Archiver (ARCH) process is configured on the primary database,
+and redo data is transferred to the standby database server. When using the Archiver
+process, the redo data is archived whenever a log switch happens on the primary
+server, whereas LGWR writes redo data to standby redo logs on the downstream server.
+The changes are then mined from the standby redo logs on the downstream server.
+
+
+
+
+Nonintegrated Apply
+The replicat process makes use of standard SQL to apply DML or DDL changes to the target system. A
+change is read from the trail, data conversion or filtering is applied, and a SQL statement is constructed that
+is then applied on the target database.
+
+
+![image](https://user-images.githubusercontent.com/108070848/223399773-f956c8f1-2ee6-4814-b8b2-58845b1b896a.png)
+
+
+
+
+
+Integrated Apply
+In this configuration, the Oracle internal apply process is used by the replicat. A change is read from the
+trail, and the data conversion and filtering takes place. The apply process then constructs an LCR for the
+DML change. The LCR is then applied to the target database by the inbound server. This mode makes use of
+parallel apply while keeping intact the atomicity of the transaction. It thereby has higher/faster throughput.
+
+
+let’s look at the advantages of using integrated apply over classic apply.
+• The apply processes can be configured with the parameters PARALLELISM and
+MAX_PARALLELISM to define the degree of parallelism. This allows the apply processes
+to work in parallel for applying multiple transactions concurrently during heavy
+workloads.
+• Integrated apply is easier to configure when compared to classic apply.
+• It supports pluggable databases.
+
+
+Implementing Classic and Integrated Captures
+-----------
+
+To create a classic capture process named ETTND001 , issue the following command at the GGSCI prompt:
+      GGSCI> ADD EXTRACT ETTND001, TRANLOG, BEGIN NOW
+      
+ assign a local trail to this extract.
+      GGSCI> ADD EXTTRAIL /app/ggs/tiger/dirdat/t1, EXTRACT ETTND001
+
+You can create an intermediate data pump called PFTND001 to read these local trails.
+      GGSCI> ADD EXTRACT PFTXD001, EXTTRAILSOURCE /app/ggs/tiger/dirdat/t1     
+      
+      
+ Creating an On-Source Integrated Capture
+To create an integrated capture process, you need to specify INTEGRATED TRANLOG along with the ADD EXTRACT command.
+      GGSCI> ADD EXTRACT ETTND001 INTEGRATED TRANLOG, BEGIN NOW
+Then in the extract parameter file, you need to use the TRANLOGOPTIONS INTEGRATEDPARAMS parameter.
+      TRANLOGOPTIONS INTEGRATEDPARAMS (max_sga_size 200, parallelism 2)     
+      
+ Here’s the parameter file for an integrated extract ETTND001 when the source database is the mining database.
+            GGSCI> EDIT PARAMS ETTND001
+            EXTRACT ETTND001
+            USERID tiger, PASSWORD tiger123_
+            LOGALLSUPCOLS
+            UPDATERECORDFORMAT COMPACT
+            ENCRYPTTRAIL AES192
+            TRANLOGOPTIONS INTEGRATEDPARAMS (max_sga_size 200, parallelism 2)
+            EXTTRAIL /app/ggs/tiger/dirdat/t1
+            TABLE TIGER.*;
+
+And here’s the corresponding data pump parameter file pftnd001.prm :
+      GGSCI> EDIT PARAMS PFTND001
+      EXTRACT PFTND001
+      USERID tiger, PASSWORD tiger123_
+      RMTHOST node2.ravin-pc.com, MGRPORT 7809 ENCRYPT AES192, KEYNAME mykey1
+      RMTTRAIL /app/ggs/fox/dirdat/f1
+      PASSTHRU
+      TABLE TIGER.*;     
+
+
+Creating an Integrated Capture Using a Downstream Mining Database
+
+For integrated capture using downstream mining, the downstream database must be running in ARCHIVELOG
+mode. Also, you need to set up standby redo log files, which receive redo logs from online redo log files on
+the source database.
+      
+Add the extract integrated extract process on the mining database server.
+
+GGSCI> ADD EXTRACT ETTND001 INTEGRATED TRANLOG BEGIN NOW
+EXTRACT added.
+
+GGSCI> ADD EXTTRAIL /app/ggs/tiger/dirdat/t1, EXTRACT ETTND001
+EXTTRAIL added.
+
+
+Log into the mining database to register the extract as follows:
+      GGSCI> DBLOGIN USERID tiger@orcl1 PASSWORD tiger123_
+Successfully logged into database.
+      GGSCI> MININGDBLOGIN USERID tiger, PASSWORD tiger123_
+Successfully logged into mining database.
+      GGSCI> REGISTER EXTRACT ETTND001 DATABASE      
+      
+      
+Add the following parameters to your extract and data pump processes’ parameter files.
+      GGSCI> EDIT PARAMS ETTND001
+      EXTRACT ETTND001
+      USERID tiger, PASSWORD tiger123_
+      TRANLOGOPTIONS MININGUSER tiger@orcl2 MININGPASSWORD tiger123_
+      TRANLOGOPTIONS INTEGRATEDPARAMS (downstream_real_time_mine Y)
+      EXTTRAIL /app/ggs/tiger/dirdat/t1
+      TABLE TIGER.*;
+
+The data pump parameter file configuration remains essentially the same as classic mode.
+      GGSCI> EDIT PARAMS PFTND001
+      EXTRACT PFTND001
+      USERID tiger, PASSWORD tiger123_
+      RMTHOST node2.ravin-pc.com, MGRPORT 7809 ENCRYPT AES192, KEYNAME mykey1
+      RMTTRAIL /app/ggs/fox/dirdat/f1
+      PASSTHRU
+      TABLE TIGER.*;      
+
+      
+If you are using an Oracle 12 c multitenant database, your extract and data pump parameter file will have the following configuration:
+      EXTRACT ETTND001
+      USERIDALIAS tiger1
+      TRANLOGOPTIONS MININGUSERALIAS tiger2
+      TRANLOGOPTIONS INTEGRATEDPARAMS (MAX_SGA_SIZE 164, &
+      DOWNSTREAM_REAL_TIME_MINE y)
+      LOGALLSUPCOLS
+      UPDATERECORDFORMAT COMPACT
+      ENCRYPTTRAIL AES192
+      EXTTRAIL /app/ggs/tiger/dirdat/t1
+      SOURCECATALOG pdb1
+      TABLE TIGER1.*;
+      SOURCECATALOG pdb2
+      TABLE TIGER2.*;
+
+Here is the data pump parameter configuration for a multitenant database:
+      EXTRACT PFTND001
+      USERIDALIAS tiger
+      RMTHOST node2.ravin-pc.com, MGRPORT 7809 ENCRYPT AES192, KEYNAME mykey1
+      RMTTRAIL /app/ggs/fox/dirdat/f1
+      SOURCECATALOG pdb1
+      TABLE TIGER1.*;
+      SOURCECATALOG pdb2
+      TABLE TIGER2.*;      
+
+
+
+Monitoring an Integrated Capture
+----------
+
+##### 1
+
+      col CAPTURE_NAME for a20;
+      col QUEUE_NAME for a15;
+      col START_SCN for 9999999999;
+      col STATUS for a10;
+      col CAPTURED_SCN for 9999999999;
+      col APPLIED_SCN for 9999999999;
+      col SOURCE_DATABASE for a10;
+      col LOGMINER_ID for 9999999;
+      col REQUIRED_CHECKPOINTSCN for a30;
+      col STATUS_CHANGE_TIME for a15;
+      col ERROR_NUMBER for a15;
+      col ERROR_MESSAGE for a10;
+      col CAPTURE_TYPE for a10;
+      col START_TIME for a30
+      SELECT CAPTURE_NAME, QUEUE_NAME, START_SCN, STATUS,
+      CAPTURED_SCN, APPLIED_SCN, SOURCE_DATABASE,
+      LOGMINER_ID, REQUIRED_CHECKPOINT_SCN,
+      STATUS_CHANGE_TIME, ERROR_NUMBER, ERROR_MESSAGE,
+      CAPTURE_TYPE, START_TIME
+      FROM DBA_CAPTURE;
+
+You can also query the dynamic statistics from the GoldenGate views in the database.
+      col state for a30;
+      SELECT sid, serial#, capture#, CAPTURE_NAME, STARTUP_TIME, CAPTURE_TIME,
+      state, SGA_USED, BYTES_OF_REDO_MINED,
+      to_char(STATE_CHANGED_TIME, 'mm-dd-yy hh24:mi') STATE_CHANGED_TIME
+      FROM V$GOLDENGATE_CAPTURE
+
+
+The following query gives additional details about the capture message’s create time and its number:
+      col capture_message_create_time for a30;
+      col enqueue_message_create_time for a27;
+      col available_message_create_time for a30;
+      SELECT capture_name,
+      to_char(capture_time, 'mm-dd-yy hh24:mi') capture_time,
+      capture_message_number,
+      to_char(capture_message_create_time ,'mm-dd-yy hh24:mi') capture_message_create_time,
+      to_char(enqueue_time,'mm-dd-yy hh24:mi') enqueue_time,
+      enqueue_message_number to_char(enqueue_message_create_time, 'mm-dd-yy hh24:mi') enqueue_message_create_time,
+      available_message_number,
+      to_char(available_message_create_time,'mm-dd-yy hh24:mi') available_message_create_time
+      FROM GV$GOLDENGATE_CAPTURE;
+
+
 
  
 
