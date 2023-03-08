@@ -1144,6 +1144,150 @@ The following query gives additional details about the capture message’s creat
       FROM GV$GOLDENGATE_CAPTURE;
 
 
+LOGALLSUPCOLS tells the extract to capture a before image for all supplemental log columns for the
+update and delete operations. By default before and after images are captured in a separate record, which
+incurs processing overhead and disk I/O for both capture and apply processes, and also the overall trail files
+size is larger.
 
+Let’s take a look at how to add integrated replicat RFDLD001 .
+      GGSCI> DBLOGIN USERID fox@orcl2, PASSWORD fox123_
+Successfully logged into database.
+Add replicat RFDLD001 with the INTEGRATED option.
+      GGSCI> ADD REPLICAT RFDLD001 INTEGRATED EXTTRAIL /app/ggs/fox/dirdat/f1
+REPLICAT (Integrated) added.
+Configure the replicat parameter file to contain the following parameter:
+
+GGSCI> edit params RFDLD001
+      REPLICAT RFDLD001
+      SETENV (ORACLE_SID='orcl3')
+      DBOPTIONS INTEGRATEDPARAMS(parallelism 6)
+      USERID fox@orcl3, PASSWORD fox123_
+      ASSUMETARGETDEFS
+      MAP TIGER. *, TARGET FOX. *;
+
+Start the newly added replicat and run INFO on it.
+      GGSCI> info replicat RFDLD001
+      
+ SQL> select REPLICAT_NAME,SERVER_NAME from DBA_GOLDENGATE_INBOUND;
+SQL> select APPLY_NAME,QUEUE_NAME,status from dba_apply;
+SQL> select apply_ame,state from V$GG_APPLY_COORDINATOR ;
+
+In this example, we have set parallelism to 6 for the replicat, which means there will be six apply
+processes that you can query from the database, as shown here:
+SQL> select server_id,TOTAL_MESSAGES_APPLIED from V$GG_APPLY_SERVER where apply_name='OGG$RFDLD001';     
+      
+      
+Coordinated Replicat
+----------
+The integrated capture and delivery processes are limited only to Oracle databases. With an Oracle
+GoldenGate 12 c release, a new delivery process called coordinated replicat was introduced. This type of
+replicat is multithreaded. They can read multiple trails independently and apply transactions in parallel
+
+      
+ In Oracle GoldenGate 12 c , a single replicat parameter file is created, and additional replicat groups
+are added automatically with a coordinator process assigning workloads to individual replicat groups. This
+partitioning is done using the THREADRANGE parameter, as in the following example:
+
+      MAP TIGER.TABLEA, TARGET FOX.TABLEA, THREADRANGE (1-3, WORKID));
+
+use either classic or integrated extract groups on the source that delivers trails to the target
+with the coordinated replicat. The replicat you configure is called coordinator , and its name is limited to
+five characters.
+
+
+Add a coordinated replicat as shown next. Please note here the replicat group name is only five
+characters; remaining characters are automatically assigned by the coordinated replicat process.
+      GGSCI> add replicat RFDLD, coordinated, EXTTRAIL /app/ggs/fox/dirdat/f1, maxthreads 5
+REPLICAT (Coordinated) added.
+      
  
+GGSCI> view params RFDLD
+REPLICAT RFDLD
+USERIDALIAS fox
+ASSUMETARGETDEFS
+MAP TIGER.TABLEA, TARGET FOX.TABLEA, THREADRANGE (1-5, WORKID));
 
+
+
+CHAPTER 6 Capturing DDL Changes
+----------------------
+
+Oracle GoldenGate supports replication of DDL statements from one database to another database.
+Currently, DDL replication is supported only for Oracle databases
+
+
+
+What Is DDL Replication?
+A change in the structure of an object or creating new object in an Oracle database is called Data Definition
+Language (DDL). Oracle GoldenGate supports DDL on the following objects of Oracle databases:
+
+• Clusters            • Functions
+• Indexes             • Materialized views
+• Packages            • Procedures
+• Roles               • Sequences
+• Synonyms            • Tables
+• Tablespaces         • Triggers
+• Types              • Users            • Views
+
+
+Types of DDL Replication
+-------
+There are two types of DDL Replication supported by Oracle GoldenGate as listed the following:
+• Trigger-based or classic DDL replication : This is the classic DDL capture method
+supported for Oracle database versions earlier than 11.2.0.4. It requires you to install
+triggers and supporting objects for capturing and applying DDL changes.
+• Triggerless or native DDL replication : The triggerless, also called native, DDL
+replication was introduced with Oracle Database 11.2.0.4. This type of replication
+uses the database log mining server for capturing and applying DDL changes.
+
+Limitations with DDL Replication
+DDL replication is slightly trickier when compared to replicating data. Before setting up DDL replication
+between two systems, you must be aware of the limitations with DDL replication.
+
+
+• The maximum length of a DDL statement to be replicated is between 2 MB to 4 MB.
+If the DDL length exceeds this size, the extract process will issue a warning message
+and ignore the DDL statement. These ignored DDL statements will be stored in the
+marker table.
+
+• The source and target database objects on which the DDL replication will happen
+should be identical.
+
+• DDL replication is not supported on standby databases.
+• DDL replication can be mapped to different object names only by the primary
+extract process. Data pumps support DDL replication in as it is PASSTHRU mode.
+• A DML/DDL operation within a DDL trigger is not captured.
+• It is mandatory to use ASSUMETARGETDEFS instead of SOURCEDEFS in the replicat
+configured for DDL replication.
+
+
+
+DDL Scope
+The DDL scope defines how a DDL operation is handled by Oracle GoldenGate. There are three DDL scopes
+in which you can classify DDL operations to be replicated. These DDL scopes are as follows:
+
+• Mapped : Objects are specified in the TABLE and MAP statements in the extract/replicat
+process. Both DDL and DML changes are applicable using the instructions in the
+TABLE and MAP statements.
+
+
+
+Unmapped : The object name is not included in TABLE and MAP statements in the extract/replicat
+process. Only DDL changes are replicated. DDL statements are applied to the same schema name as on
+the source. The replicat automatically switches from the current schema to the source schema and then
+after applying the DDL, it switches back to the current schema.
+Here’s an example:
+
+CREATE TABLE NEW_TABLE1
+(
+ID NUMBER,
+DESCRIPTION VARCHAR2(30)
+);
+
+
+• Other : The object is not mapped to the MAPPED or UNMAPPED scope that comes under
+this scope, such as CREATE USER , ALTER TABLESPACE , and so on. DDLs are applied at
+the target with the same schema and object names as on the source.
+
+
+![image](https://user-images.githubusercontent.com/108070848/223689237-01c41eae-bad1-40ae-b00f-bc81505f2ce6.png)
