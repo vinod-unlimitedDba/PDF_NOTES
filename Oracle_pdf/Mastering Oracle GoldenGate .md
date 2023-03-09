@@ -1291,3 +1291,139 @@ the target with the same schema and object names as on the source.
 
 
 ![image](https://user-images.githubusercontent.com/108070848/223689237-01c41eae-bad1-40ae-b00f-bc81505f2ce6.png)
+
+
+To set up your DDL replication, you must install DDL objects as follows:
+1. Choose a schema (for example GGSUSER ) that will contain the GoldenGate DDL
+objects.
+2. Grant execute privileges on the utl_file package to the GoldenGate user. This
+gives the GoldenGate user access to the operating system files in the UTL_FILE
+directory.
+      GRANT EXECUTE ON utl_file TO GGSUSER;
+
+3. Set up a default tablespace for the previous schema you created ( GGSUSER ).
+Make sure that this tablespace is solely used by the previous DDL schema and
+no other objects are created in it. It is a good idea to keep AUTOEXTEND ON for this
+tablespace as the DDL history and marker table may grow with time.
+4. Create or edit the GLOBALS parameter file. You will need to specify the schema_name in the GLOBALS file.
+
+      EDIT PARAMS ./GLOBALS
+      GGSCHEMA ggsuser
+
+5. To recognize Oracle invisible indexes for DDL replication, set al low_invisible_index_keys to TRUE in the params.sql file.
+6. define allow_invisible_index_keys = 'TRUE'
+7. Save and close the globals and params files and exit all Oracle sessions to proceed to the next step.
+8. You now need to run some SQL files to set up your DDL replication environment. You should be logged in as the SYSDBA user for running these SQL files. These
+SQL files are present in the GoldenGate installation directory where all the OGG software binaries are extracted during installation.
+
+
+Execute the marker_setup.sql file. This will prompt for the Oracle GoldenGate schema. Provide GGSUSER when prompted.
+      SQL>@marker_setup.sql
+
+Next, execute the ddl_setup.sql file. This will prompt for the DDL schema. This will fail if the
+tablespace you specified for this schema is shared by any other user.
+
+SQL>@ddl_setup.sql
+
+Set up the role by executing the role_setup.sql file. This will prompt for the DDL schema. This takes care of the role setup required for DDL synchronization.
+`     SQL>@role_setup.sql
+Use GRANT role (the default is GGS_GGSUSER_ROLE ) for the Oracle extract users.
+      SQL>GRANT role TO ggsuser;
+Enable the DDL trigger.
+
+      SQL>@ddl_enable.sql
+
+Optionally, to improve the performance of the DDL trigger, the script pins the PL/SQL package being
+used by the trigger into the memory.
+
+      SQL>@ddl_pin DDL_user
+
+9. To replicate DDL operations on any new table, you can use wildcards in the
+parameter files as follows:
+• In the TABLE statement of the extract parameter file:
+TABLE source_schema.*;
+• In the MAP and TARGET statements of the replicat parameter file:
+MAP source_schema.TAB*. TARGET target_schema.HIST_*;
+
+
+
+
+Execute ddl_pin.sql , which pins DDL tracing, the DDL package, and the DDL trigger for performance improvements.
+SQL> @ddl_pin.sql TIGER
+
+
+
+Now, you can configure the parameter files for the extract process for DDL synchronization. Add the following entry to your extract process:
+      DDL INCLUDE MAPPED
+      
+the parameters for the extract process ( ETTND001 ):
+      
+      EXTRACT ETTND001
+            USERID tiger, PASSWORD tiger123_
+            EXTTRAIL /app/ggs/tiger/dirdat/t1
+            DDL INCLUDE ALL
+            TABLE tiger.t*;     
+   
+the parameters for the data pump process ( PFTND001 ):
+      
+      EXTRACT PFTND001
+      USERID tiger, PASSWORD tiger123_
+      RMTHOST node2.ravin-pc.com, MGRPORT 7809
+      RMTTRAIL /app/ggs/fox/dirdat/f1
+      DDL INCLUDE ALL
+      TABLE tiger.t*;
+      
+parameters for the replicat process ( RFDLD001 ):
+      REPLICAT RFDLD001  
+      USERID fox, PASSWORD fox123_
+      ASSUMETARGETDEFS
+      DISCARDFILE /app/ggs/fox/dirrpt/rfdld001.dsc, PURGE
+      DDL INCLUDE ALL
+      DDLERROR DEFAULT IGNORE
+      MAP tiger.*, TARGET fox.*;
+      
+DDL Capture in Integrated Capture Mode
+------------
+
+The integrated capture and apply processes are exclusive to Oracle Database since they use the Oracle log
+mining server for replication. If you have an integrated capture on an Oracle Database 11.2.0.4 or later, you
+can configure DDL replication through the log mining server.     
+      
+
+Here’s an example of excluding some specific DDL statements from replication.
+Exclude any DDL statement from the SYS user, as follows:
+if ora_owner='SYS' then
+retVal:='EXCLUDE';
+end if;
+Exclude DROP USER statements, as follows:
+if ora_objtype='USER' and ora_optype ='DROP' then
+retVal:='EXCLUDE';
+end if;
+Exclude DDL on TEMP% tables, as follows:
+if ora_owner='TIGER' and ora_name like 'TEMP%' then
+retVal:='EXCLUDE';
+end if;
+
+
+
+Selective DDL Replication Using the DDL Parameter
+----------
+
+DDL parameter with the INCLUDE and EXCLUDE option in the capture parameter. Only one DDL
+parameter can be used in a parameter file. Please note that the DDL option can be used only in the primary
+extract and not in a data pump extract.
+
+
+DDL INCLUDE . Also, DDL EXCLUDE ALL does not require INCLUDE with it.
+Here are some examples of DDL filters:
+DDL INCLUDE ALL, EXCLUDE OBJNAME TIGER.*
+DDL INCLUDE OBJNAME TIGER.* EXCLUDE OBJNAME TIGER.CNTRY
+DDL INCLUDE OBJNAME TIGER.* ALLOWEMPTYOBJECT
+DDL INCLUDE OBJNAME orcl.TIGER.* ALLOWEMPTYOWNER
+DDL INCLUDE OBJNAME tiger.*
+DDL INCLUDE OBJNAME tiger."cntry"
+DDL INCLUDE OBJTYPE 'INDEX'
+DDL INCLUDE OBJTYPE 'SNAPSHOT'
+DDL INCLUDE OPTYPE ALTER
+DDL INCLUDE ALL EXCLUDE INSTR 'CREATE INDEX'
+DDL INCLUDE ALL EXCLUDE INSTRCOMMENTS 'NOT REPLICATED'
