@@ -72,3 +72,18 @@ row or record
 We use the terms rows and records interchangeably. In PostgreSQL, rows can be
 treated independently from their respective tables. This distinction becomes ap‐
 parent and useful when you write functions or use the row constructor in SQL
+
+
+
+rule
+Rules are instructions to substitute one action for another. PostgreSQL uses rules
+internally to define views. As an example, you could create a view as follows:
+
+   CREATE VIEW vw_pupils AS SELECT * FROM pupils WHERE active;
+   
+Behind the scenes, PostgresSQL adds an INSTEAD OF SELECT rule dictating that
+when you try to select from a table called vw_pupils, you will get back only rows
+from the pupils table in which the active field is true.   
+   
+
+CHAPTER 2 Database Administration
