@@ -85,5 +85,36 @@ Behind the scenes, PostgresSQL adds an INSTEAD OF SELECT rule dictating that
 when you try to select from a table called vw_pupils, you will get back only rows
 from the pupils table in which the active field is true.   
    
+   
+   
+   
+   
+   
+   The main configuration files that control basic operations of a PostgreSQL server instance are:
+postgresql.conf
+------
+Controls general settings, such as memory allocation, default storage location for
+new databases, the IP addresses that PostgreSQL listens on, location of logs
+
+Version 9.4 introduced an additional file called postgresql.auto.conf,
+which is created or rewritten whenever you use the new ALTER SYSTEM SQL com‐
+mand. The settings in that file override the postgresql.conf file.
+
+pg_hba.conf
+
+Controls security. It manages access to the server, dictating which users can log in
+to which databases, which IP addresses or groups of addresses can connect, and
+which authentication scheme to expect.
+
+pg_ident.conf
+
+If present, maps an authenticated OS login to a PostgreSQL user. People sometimes
+map the OS root account to the postgres superuser account. Each authentication
+line in pg_hba.conf can dictate usage of a different pg_ident.conf file.
+
+
+   
+   
+   
 
 CHAPTER 2 Database Administration
