@@ -1427,3 +1427,299 @@ DDL INCLUDE OBJTYPE 'SNAPSHOT'
 DDL INCLUDE OPTYPE ALTER
 DDL INCLUDE ALL EXCLUDE INSTR 'CREATE INDEX'
 DDL INCLUDE ALL EXCLUDE INSTRCOMMENTS 'NOT REPLICATED'
+
+CHAPTER 7 ■ PERFORMING THE INITIAL LOAD
+--------
+
+
+|Parameter       |  Used In             |     Description   |
+|SOURCEISTABLE   |   Extract            |     The extract is an initial load extract that extracts directly from the source table.|
+|SPECIALRUN      |   Replicat           |     The replicat is a one-time run replicat that runs without using checkpoints.|
+|BULKLOAD        |   Replicat           |     The replicat will directly interface with the Oracle SQLLOADER utility on the target to load data into the target tables.|
+|GENLOAD         |   Replicat          |     This generates run and control files for the specified database utility.|
+|RMTFILE         | Extract             |    This specifies the extract file name.
+|FORMATASCII     |  Extract            |     This instructs the extract to write output in ASCII text in flat files. These can be used by the database utility on the                                           target machine to load data
+                                             directly without setting up the replicat process.|
+|SQLLOADER       |   Extract           |     This is used along with the FORMATASCII parameter to extract data into ASCII-format flat files.
+
+
+
+Initial Load Using the Database Utility
+
+replicat process should have the HANDLECOLLSION parameter to handle errors after the initial load.
+Turn off HANDLECOLLISION once pending transactions from the extract have flown to the replicat.
+
+remove the parameter from the replicat parameter file and bounce the
+replicat or issue the following command in 
+
+GGSCI. SEND REPLICAT RFDLD001 , NOHANDLECOLLISIONS
+
+Initial Load Using SQLLOADER
+---------
+initial load using SQLLOADER is to capture data from the source database using the
+initial load extract process into external ASCII-format flat files.
+
+
+![image](https://user-images.githubusercontent.com/108070848/227124628-dfce18a6-bfe3-4868-95f2-c4a1fb298759.png)
+
+
+1.Create an initial load extract on the source machine.
+      GGSCI> ADD EXTRACT INITEXT1, SOURCEISTABLE
+2.Configure the extract parameter file to have the following parameters:
+
+GGSCI> EDIT PARAMS INITEXT1
+
+            SOURCEISTABLE
+            SETENV (NLS_LANG = "AMERICAN_AMERICA.AL32UTF8")
+            userid tiger, password tiger123_
+            FORMATASCII, SQLLOADER
+            RMTHOST node2-ravinpc, MGRPORT 7809
+            RMTFILE /app/ggs/tiger/dirdat/load_cntry.dat PURGE
+            TABLE tiger.cntry;
+            
+            
+ Create the initial load replicat on the target machine. This replicat only generates control and run files
+to be used by the database utility for loading data.
+
+GGSCI> ADD REPLICAT INITREP1, SPECIALRUN
+      Configure the replicat parameter file.
+GGSCI> EDIT PARAMS INITREP1
+
+            SPECIALRUN
+            END RUNTIME
+            GENLOADFILES sqlldr.tpl
+            userid fox, password fox123_
+            extfile /app/ggs/fox/dirdat/load_cntry.dat
+            assumetargetdefs
+            MAP TIGER.CNTRY, TARGET FOX.CNTRY;
+            
+  GETLOADFILES specifies the name of the template that generates the control and run file
+  
+$ GGSCI> START EXTRACT ETLDT0001
+
+report file to see whether the extraction has completed. The report file should have
+similar to the following information indicating your flat file for the load has been extracted.
+
+$ / app/ggs/tiger /extract paramfile dirprm/ initext1 .prm reportfile initext1.rpt
+            
+
+
+Initial Load Using the Direct Load Method
+--------
+
+initial load, special extract and replicat processes are created. The initial load extract
+captures all of the source records and is sent to the initial load replicat task. The initial load replicat task is
+dynamically started by the manager process
+
+
+
+![image](https://user-images.githubusercontent.com/108070848/227127916-b5ad55bd-c3b9-401c-b7cc-cf926fb63dd6.png)
+
+
+Let’s start with creating an initial load extract named INITEXT1 .
+GGSCI> ADD EXTRACT INITEXT1, SOURCEISTABLE
+GGSCI> EDIT PARAMS INITEXT1
+      EXTRACT INITEXT1
+      SOURCEISTABLE
+      RMTHOST ravin-ravinpc, MGRPORT 7809
+      RMTTASK REPLICAT, GROUP INITREP1
+      USERID tiger, PASSWORD tiger123_
+      TABLE TIGER.*;
+Save and close the parameter file. Now, create an initial load replicat called INITREP1 on the target.
+
+GGSCI> ADD REPLICAT INITREP1, SPECIALRUN
+GGSCI> EDIT PARAMS INITREP1
+
+      REPLICAT INITREP1
+      --ASSUMETARGETDEFS
+      SOURCEDEFS /app/ggs/fox/dirdef/INITREP1.def
+      DISCARDFILE /app/ggs/fox/dirrpt/INITREP1.dsc, MEGABYTES 599, append
+      USERID fox, PASSWORD fox123_
+      MAP TIGER.*, TARGET FOX.*;
+      
+      
+  Save and close the parameter file.
+First start your regular extract process and then start your initial load extract process.
+
+$ GGSCI> START EXTRACT ETLDT0001
+$ / app/ggs/tiger /extract paramfile dirprm/ initext1 .prm reportfile initext1.rpt    
+
+
+Once the initial load is complete, start your regular replicat processes that will load changes
+captured during and after the initial load.
+GGSCI> START REPLICAT RFDLD001
+GGSCI> SEND REPLICAT RFDLD001 , NOHANDLECOLLISIONS
+
+
+Initial Load Using BULKLOAD to sqlloader
+------
+
+
+initial load extract sends data to the initial load replicat. The replicat task then interfaces
+with the sqlloader API to bulk-load data in the target Oracle database. Figure 7-3 shows the components of
+Oracle GoldenGate when using the direct bulk load to sqlloader method for initial load.
+
+
+
+GGSCI> ADD EXTRACT INITEXT1, SOURCEISTABLE
+GGSCI> EDIT PARAMS INITEXT1
+EXTRACT INITEXT1
+RMTHOST node2-ravinpc, MGRPORT 7809
+RMTTASK REPLICAT, GROUP INITREP1
+USERID tiger, PASSWORD tiger123_
+TABLE TIGER.*;
+Create an initial load replicat called INITREP1 on the target as shown here:
+GGSCI> ADD REPLICAT INITREP1, SPECIALRUN
+GGSCI> EDIT PARAMS INITREP1
+REPLICAT INITREP1
+BULKLOAD
+--ASSUMETARGETDEFS
+SOURCEDEFS /app/ggs/fox/dirdef/INITREP1.def
+DISCARDFILE /app/ggs/fox/dirrpt/INITREP1.dsc, MEGABYTES 599, append
+USERID fox, PASSWORD fox123_
+MAP TIGER.*, TARGET FOX.*;
+Follow the similar process
+
+Follow the similar process explained for the direct load method. Start the initial load extract named
+INITEXT1 and let it complete.
+$ / app/ggs/tiger /extract paramfile dirprm/ initext1 .prm reportfile initext1.rpt
+Verify the report file to see whether the extraction has completed. Start the replicat process and verify
+the load after it completes. You can send the INFO command on the replicat INITREP1 to see the progress.
+GGSCI> START REPLICAT RFDLD001
+GGSCI> SEND REPLICAT RFDLD001 , NOHANDLECOLLISIONS
+
+
+
+Initial Load Example
+-----------
+
+example of performing the initial load on Oracle Database 12 c using integrated capture
+and apply. In this example, you will perform the initial load from the TIGER schema on the orcl1 database to
+the FOX schema on the orcl2 database using the direct load method.
+
+
+Execute the following scripts on the FOX schema to disable table constraints.
+--disable foreign key and check constraints before initial load
+BEGIN
+FOR c IN
+(SELECT c.owner, c.table_name, c.constraint_name
+FROM user_constraints c, user_tables t
+WHERE t.table_name in (‘table_name1’,’table_name2’,’table_name3’)
+AND c.table_name = t.table_name
+AND c.constraint_type!='P'
+AND c.status = 'ENABLED'
+ORDER BY c.constraint_type DESC)
+LOOP
+dbms_utility.exec_ddl_statement('alter table "' || c.owner || '"."' || c.table_name ||
+'" disable constraint ' || c.constraint_name);
+END LOOP;
+END;
+/
+
+
+Next, truncate tables from the FOX schema on the orcl2 database. If you are replicating only specific tables, you should truncate only those tables.
+set serveroutput on size 1000000
+spool truncate_wseprod_uat_20110914.log
+BEGIN
+FOR rec IN (select 'truncate '|| object_type || ' ' || object_name AS drop_sql
+FROM user_objects WHERE object_type IN ('TABLE')
+LOOP
+DBMS_OUTPUT.PUT_LINE(rec.drop_sql);
+EXECUTE IMMEDIATE(rec.drop_sql);
+END LOOP;
+END;
+/
+
+
+Add supplemental logging for tables to be replicated on the source. For this example, I have only the ORDER_DTL table in the TIGER schema.
+
+GGSCI> DBLOGIN USERID tiger@orcl1 PASSWORD tiger123_
+Successfully logged into database.
+
+GGSCI> ADD TRANDATA TIGER.ORDER_DTL
+Logging of supplemental redo data enabled for table TIGER.ORDER_DTL.
+TRANDATA for scheduling columns has been added on table 'TIGER.ORDER_DTL'.
+
+Add the extract on the source:
+
+GGSCI> ADD EXTRACT ETTND001, integrated tranlog, begin now
+GGSCI> add exttrail /app/ggs/tiger/dirdat/t1, extract ETTND001, megabytes 5
+Add the following entries in the parameter file.
+
+EXTRACT ETTND001
+USERID TIGER, PASSWORD tiger123_
+EXTTRAIL /app/ggs/tiger/dirdat/t1
+LOGALLSUPCOLS
+UPDATERECORDFORMAT compact
+TABLE TIGER.ORDER_DTL;
+
+
+Log in to the GoldenGate user from GGSCI and register the extract with the database.
+GGSCI> DBLOGIN USERID tiger@orcl1 PASSWORD tiger123_
+GGSCI> REGISTER EXTRACT ETTND001 DATABASE
+
+
+Add the data pump to the pump trail files from the target to the fox GoldenGate instances.
+GGSCI> add extract DTTND001, exttrailsource /app/ggs/tiger/dirdat/t1
+GGSCI> add rmttrail /app/ggs/fox/dirdat/f1, extract DTTND001, megabytes 5
+
+
+GGSCI> edit params DTTND001
+EXTRACT DTTND001
+PASSTHRU
+RMTHOST node2-ravinpc, MGRPORT 7840
+RMTTRAIL /app/ggs/fox/dirdat/f1
+TABLE TIGER.ORDER_DTL;
+Start the extract and data pump.
+GGSCI> start extract *
+Create a replicat group on the target machine’s FOX OGG instance.
+GGSCI> edit params RFDLD001
+
+REPLICAT RFDLD001
+ASSUMETARGETDEFS
+DISCARDFILE /app/ggs/fox/dirrpt/rfdld001.dsc, purge
+USERIDALIAS DB2 domain admin
+MAP hr.*, TARGET hr.*;
+GGSCI> add replicat RFDLD001, integrated, exttrail /app/ggs/fox/dirdat/f1
+Get the current SCN of the source database.
+
+
+SQL> select current_scn from v$database;
+CURRENT_SCN
+-----------
+1642141
+
+
+set up your regular extract, data pump, and replicat processes for capturing and applying change, set up the initial load extract called INITEXT1 and the initial load replicat called INITREP1 .
+      
+
+
+GGSCI> edit params INITEXT1
+EXTRACT INITEXT1
+SOURCEISTABLE
+USERID tiger@orcl1 PASSWORD tiger123_
+RMTHOST node2-ravinpc, MGRPORT 7809
+RMTFILE /app/ggs/fox/dirdat/initld, MEGABYTES 2, PURGE
+TABLE TIGER.*, SQLPREDICATE 'AS OF SCN 1642141';
+TABLEEXCLUDE TIGER.RAVIN_ORDERS;
+Here, TABLEEXCLUDE will inform OGG not to capture the table RAVIN_ORDERS .
+Next, create and start the INITEXT1 extract channel.
+GGSCI> add extract INITEXT1, sourceistable
+GGSCI> start extract INITEXT1
+Sending START request to MANAGER …
+EXTRACT INITLOAD starting
+
+
+GGSCI> add replicat INITREP1, specialrun
+REPLICAT INITREP1
+USERID fox@orcl1 PASSWORD fox123_
+SPECIALRUN
+END RUNTIME
+ASSUMETARGETDEFS
+EXTFILE /app/ggs/fox/dirdat/initld
+MAP TIGER.*, TARGET FOX.*;
+Start the initial load replicat.
+
+GGSCI> start replicat INITREP1
+
+GGSCI> start replicat RFDLD001, aftercsn 1642141
