@@ -113,8 +113,183 @@ map the OS root account to the postgres superuser account. Each authentication
 line in pg_hba.conf can dictate usage of a different pg_ident.conf file.
 
 
-   
-   
-   
+ listen_addresses
+Informs PostgreSQL which IP addresses to listen on. This usually defaults to lo
+calhost or local, but many people change it to *, meaning all available IP ad‐
+dresses.
+
+max_connections
+The maximum number of concurrent connections allowed.
+
+shared_buffers
+Defines the amount of memory shared among all connections to store recently
+accessed pages. This setting profoundly affects the speed of your queries.
+  
+effective_cache_size
+An estimate of how much memory you expect to be available in the OS and Post‐
+greSQL buffer caches. This setting has no effect on actual allocation, but query
+planner figures
+
+work_mem
+Controls the maximum amount of memory allocated for operations such as sorting,
+hash join, and table scans. The optimal setting depends on how you’re using the
+database, how much memory you have to spare, and whether your server is dedi‐
+cated to PostgreSQL or not.
+
+
+maintenance_work_mem
+The total memory allocated for housekeeping activities such as vacuuming (prun‐
+ing records marked for delete). You shouldn’t set it higher than about 1 GB. Reload
+after changes.
+
+    ALTER SYSTEM set work_mem = 8192;
+  
+  you may need to restart the service. If just need to reload it, here’s a convenient command:
+
+SELECT pg_reload_conf();
+    
+
+pg_hba.conf
+The pg_hba.conf file controls which and how users can connect to PostgreSQL databa‐
+ses. Changes to the file require a reload or a server restart to take effect. 
+
+
+Example 2-3. Sample pg_hba.conf
+# TYPE DATABASE USER ADDRESS METHOD
+# IPv4 local connections:
+host all all 127.0.0.1/32 ident
+
+
+Authentication method. The usual choices are ident, trust, md5, and pass
+word. Version 9.1 introduced the peer authentication method. The ident and
+peer options are available only on Linux, Unix, and the Mac, not on Windows.
+More esoteric options, such as gss, radius, ldap, and pam, may not always be
+installed.
+
+
+IPv4 syntax for defining network range. The first part—in this case,
+192.168.54.0—is the network address, followed by /24 as the bit mask. In our
+pg_hba.conf, we allow anyone in our subnet of 192.168.54.0 to connect as long
+as they provide a valid md5 hashed password.
+
+
+IPv6 syntax for defining network range. This applies only to servers with IPv6
+support and may prevent pg_hba.conf from loading if you add this section
+without actually having IPv6 networking.
+
+
+
+“I edited my pg_hba.conf and now my server is broken.”
+Don’t worry. This happens quite often, but it’s easily recoverable. This error is generally
+caused by typos or by adding an unavailable authentication scheme. When the post
+gres service can’t parse pg_hba.conf file, it blocks all access for safety or won’t even start
+up. The easiest way to figure out what you did wrong is to read the log file. This is located
+in the root of the data folder or in the pg_log subfolder.
+
+
+
+# Authentication methods
+
+PostgreSQL gives you many choices for authenticating users
+ trust, peer, ident, md5, and password. There is also reject, which applies an immediate denial.
+
+
+trust
+The least secure of the authentication schemes. It allows people to self-identify and
+doesn’t ask for a password. As long as the request meets the IP address, user, and
+database criteria, the user can connect. 
+
+md5
+Very common, requiring an md5-encrypted password to connect.
+password
+Uses clear-text password authentication.
+
+ident
+Uses pg_ident.conf to see whether the OS account of the user trying to connect has
+a mapping to a PostgreSQL account. No password is checked.
+
+peer
+Uses the client’s OS name from the kernel. It is available only for Linux, BSD, Mac
+OS X, and Solaris, and can be used only for local connections
+
+Managing Connections
+-----
+
+Every once in a while, someone else (never you, of course) will execute a query that he
+didn’t intend to and end up hogging resources. You could also run into a query that’s
+taking much longer than what you have patience for. 
+
+If one of these things happens,
+you’ll want to cancel the query on the connection or kill the connection altogether.
+
+we find ourselves resorting to three SQL commands to cancel
+running queries and terminate connections. Here is a typical sequence to follow:
+
+1. Retrieve a listing of recent connections and process IDs:
+
+               SELECT * FROM pg_stat_activity;
+               
+ 2. Now cancel all active queries on a connection: This does not terminate the connection itself, though.              
+
+               SELECT pg_cancel_backend(procid)
+
+3. Kill the connection:
+      
+      SELECT pg_terminate_backend(procid)
+      
+      
+ PostgreSQL lets you embed functions that perform actions within a regular SELECT
+query. So, although pg_terminate_backend and pg_cancel_backend can act on only
+one connection at a time, you can kill multiple connections by wrapping them in a
+SELECT.
+
+
+    SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = 'some_role';
+
+or before version 9.2:
+
+    SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE usename = 'some_role';
+    
+    
+ Roles
+ ----
+PostgreSQL represents accounts as roles. Roles that can log in are called login roles. Roles
+can be members of other roles; roles that contain other roles are called group roles. 
+ 
+ group roles can be members of other group roles and so on ad infinitum, but don’t
+go there unless you have a knack for hierarchical thinking.)
+
+
+Note:
+
+Recent versions of PostgreSQL no longer use the terms users and
+groups. You will still see these terms bandied about on discussion
+boards; just know that they mean login roles and group roles re‐
+spectively
+
+
+Inheriting rights from group roles
+One quirk (or convenience) in PostgreSQL is the ability to specify that a group role not
+pass its rights to member roles. To avoid having to remember the default value, you
+should always append the INHERIT keyword if you want members to inherit the rights
+of the parent role, and NOINHERIT if you don’t want them to inherit the rights of the
+parent role.
+
+
+SET ROLE royalty;
+
+Keep in mind that this is per-connection session and not a permanent delegation of rights
+
+
+A more powerful impersonation than SET ROLE some_role is SET SESSION AUTHORI
+ZATION some_role. The main differences between SET ROLE and SET SESSION AUTHOR
+IZATION are:
+• Only superusers can execute SET SESSION AUTHORIZATION, and it allows them to
+impersonate any user regardless of role membership.
+• SET SESSION AUTHORIZATION changes the values of the current_user and ses
+sion_user variables to those of the user being impersonated.
+
+ 
+    
 
 CHAPTER 2 Database Administration
