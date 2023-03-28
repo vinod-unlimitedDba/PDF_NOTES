@@ -104,6 +104,24 @@ per channel.
 
 CHAPTER4 Oracle Database 12c Multitenant
 
+maxpiecesize parameter, you can control the size of a backup set piece.
+
+control the maximum number of files that RMAN can open at one time with the maxopenfiles parameter.
+
+    Configure channel 1 d1 device type disk  maxpiecesize 100m maxopenfiles 8 rate 100mb;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
