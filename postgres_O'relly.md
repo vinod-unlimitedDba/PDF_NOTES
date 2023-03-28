@@ -293,3 +293,36 @@ sion_user variables to those of the user being impersonated.
     
 
 CHAPTER 2 Database Administration
+
+
+
+Template Databases
+A template database is, as the name suggests, a database that serves as a model for other
+databases. When you create a new database, PostgreSQL copies all the database settings
+and data from the template database into yours.
+
+
+You should never alter template0 because it is the immaculate mod‐
+el that you’ll need to copy from if you screw up your templates. Make
+your customizations to template1 or a new template database you
+create.
+
+
+
+The basic syntax to create a database modeled after a template is:
+
+        CREATE DATABASE my_db TEMPLATE my_template_db;
+
+PostgreSQL restricts the database from being
+edited or deleted. Any role with CREATEDB rights can use the database. To make any
+database a template, run the following SQL as a superuser:
+
+     UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'mydb';
+
+Using Schemas
+Schemas organize your database into logical groups. If you have more than two dozen
+databases on your server, consider cubbyholing them into schemas in a single database.
+
+
+
+
