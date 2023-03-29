@@ -110,6 +110,106 @@ control the maximum number of files that RMAN can open at one time with the maxo
 
     Configure channel 1 d1 device type disk  maxpiecesize 100m maxopenfiles 8 rate 100mb;
 
+the difference between the maxpiecesize
+parameter and the maxsetsize parameter: maxpiecesize limits the size
+of the individual backup set pieces and has no impact on the overall
+cumulative size of the backup. The maxsetsize parameter, on the other
+hand, can and will limit the overall size of your backup,
+
+
+![image](https://user-images.githubusercontent.com/108070848/228440241-d43927a8-5e25-4e46-8957-c96f8e86aa16.png)
+
+
+
+maxsetsize to limit the size of the entire backup
+that is being created. While your database might be smaller than the
+maxsetsize defined initially, it could quickly grow beyond the
+maxsetsize, causing your database backups to fail
+
+
+exclude specific tablespaces during an automated backup,
+which Oracle allows you to do with the configure command.
+
+configure exclude for tablespace old_data
+
+When enabled, backup optimization will cause Oracle to skip
+backups of files that already have identical backups on the device being backed
+up to. Here
+
+configure backup optimization on;
+
+SNAPSHOT CONTROL file is a pointin-time
+copy of the database control file that is taken during RMAN backup operations.
+The snapshot control file ensures that the backup is consistent to a given point in
+time.
+
+if you add a tablespace or datafile to a database after the backup has
+started (assuming an online backup, of course), that tablespace or datafile will
+not be included in the backup
+
+
+Using the Format String
+-----------
+
+
+%U syntax element in the previous example tells RMAN to substitute a systemgenerated
+unique identifier for the filename. %U then keeps each backup
+filename unique.
+
+
+
+%a    ----------    Indicates the activation ID of the DB should be substituted 
+%b     --------     spicifies name without any directory paths can only be used with set newname 
+%c     -------     spicifies the copy of the backup piece within  a set of duplexed backup piece 
+%d     --------     indicates name of the database should be subsituted 
+%D      -------     indiacted current  day of the month fron the gregrian calendar  
+%e      -----      indiacted archive log sequence 
+%f     -----       Indicates absolute file number  should be substitute 
+%F     -------     provide a unique and repeatable name combines DBID 
+
+%h  ------------  Indicate archive redo log  thread number
+
+%I  ---------- Indiactes that DBID should be subsituted 
+
+%M ------    Indiactes the month gregorain calendar in the format MM
+
+%N  ----  Indiactes the tablespace name be substitute 
+
+%n ------ Indicates  name of the database ,padded on the right with x character 
+
+%p   -----  piece no with backup set should be substitute value start with 1 increment by 1
+
+%s   -------  Indicates that backup set substitute
+
+%t  -------- indicate the timestamp %T indiacte that year month  format YYYYMMDD
+
+%u  ---------  Indicate eight-character name consisting compression representation of the backup set or image 
+
+
+%U default naming pattern provide a system -generated unique filename for Rman related file 
+
+%Y -- indicate that year in the format YYYY should be substitute 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
