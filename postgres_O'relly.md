@@ -323,6 +323,136 @@ Using Schemas
 Schemas organize your database into logical groups. If you have more than two dozen
 databases on your server, consider cubbyholing them into schemas in a single database.
 
+Installing Extensions
+---
+
+Getting an extension into your database takes two installation steps. First, download
+the extension and install it onto your server. Second, install the extension into your
+database.
+
+Step 1: Installing on the server
+
+installation of extensions on your server,overall idea is to down‐
+load binary files and requisite libraries, then copy the respective binaries to the bin and
+lib folders and the script files to share/extension (versions 9.1 and above) or share/
+contrib (pre-9.1). This makes the extension available for the second step.
+
+> To check already available extensions on server
+      SELECT * FROM pg_available_extensions;
+
+Step 2: Installing into a database (pre-9.1)
+
+As an example, on a CentOS running version 9.0, to run the SQL script for the pgAdmin
+pack extension, type the following from the OS command line:
+psql -p 5432 -d postgres -f /usr/pgsql-9.0/share/contrib/adminpack.sql
+
+Step 2: Installing into a database (version 9.1 and later)
+The new extension support makes installation much simpler and more consistent. Use
+the CREATE EXTENSION command to install extensions into each database. The three big
+benefits are that you don’t have to figure out where the extension files are kept (share/
+extension),
+
+  CREATE EXTENSION fuzzystrmatch;
+
+extensions must be installed by a superuser. Most extensions fall into this genre.
+
+We suggest you create one or more schemas to house extensions to keep them separate
+from production data. After you create the schema, install extensions into it through a
+command like:
+
+    CREATE EXTENSION fuzzystrmatch SCHEMA my_extensions;
+
+Upgrading to the new extension model
+
+ using a version of PostgreSQL older than 9.1 and restored your old da‐
+tabase into version 9.1 or later during a version upgrade, all extensions should continue
+to function without intervention.
+
+
+For example, suppose you had installed the tablefunc extension (for cross-tab queries)
+to your PostgreSQL 9.0 in a schema called contrib, and you’ve just restored your da‐
+tabase to a 9.1 server. Run the following command to upgrade:
+
+         CREATE EXTENSION tablefunc SCHEMA contrib FROM unpackaged;
+
+This command searches through contrib, finds all components for the extension, and
+packages them into a new extension object so it appears in the pg_available_exten
+sions list as being installed.
+
+
+Popular extensions
+------
+
+btree_gist
+Provides GiST index-operator classes that implement B-Tree equivalent behavior
+for common B-Tree services data types.
+
+btree_gin
+Provides GIN index-operator classes that implement B-Tree equivalent behavior
+for common B-Tree serviced data types. 
+
+postgis
+Elevates PostgreSQL to a PostGIS in Action state-of-the-art spatial database out‐
+rivaling all commercial options. OGC GIS data, demo‐
+graphic statistics data, or geocoding, you don’t want to be without this one.
+
+
+
+fuzzystrmatch
+A lightweight extension with functions such as soundex, levenshtein, and meta
+phone for fuzzy string matching.
+
+hstore
+An extension that adds key-value pair storage and index support, well-suited for
+storing pseudonormalized data. If you are looking for a comfortable medium be‐
+tween a relational database and NoSQL, check out hstore.
+
+
+
+dblink
+Allows you to query a PostgreSQL database on another server. Prior to the intro‐
+duction of foreign data wrappers in version 9.3, this was the only supported mech‐
+anism for cross-database interactions.
+
+
+pgcrypto
+Provides encryption tools, including the popular PGP. It’s handy for encrypting
+credit card numbers and other top secret information stored in the database.
+
+
+
+xml
+An extension that added an XML data type, related functions, and operators. The
+XML data type is now an integral part of PostgreSQL, in part to meet the ANSI SQL
+XML standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
