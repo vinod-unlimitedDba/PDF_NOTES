@@ -687,6 +687,7 @@ AUTOSTART automatically starts the specified extract/replicat process when the m
 Here we have specified to start all processes (channels) starting with E when the manager starts
 
 
+
 Step 7: Start/Stop the Manager
        
         GGSCI> START MGR
@@ -1723,3 +1724,122 @@ Start the initial load replicat.
 GGSCI> start replicat INITREP1
 
 GGSCI> start replicat RFDLD001, aftercsn 1642141
+
+
+
+CHAPTER 8 ■ ORACLE GOLDENGATE COMMANDS
+-----
+
+
+
+NUMSTR ------------ Converts a string value into a number.  ----------   @NUMSTR(value)
+STRCAT ---------- Concatenates one or more strings.        -----------   @STRCAT(FIRST_NAME, ' ',LAST_NAME)
+STRCMP -------- Compares two string literals and returns
+                -1,0,1 depending on first string that is less,
+                 equal to, or greater than the second string. -------------@STRCMP('GOLDEN','GATE')
+STREXT ---------Extracts a part (substring) of the string.     ------------@STREXT (string, begin_position,end_position)
+STREQ  ---------  Checks whether two strings are equal.
+                  Returns 1 if true; else 0.                -----STREQ (STATUS, 'P'), Processed', 'Other')
+STRFIND --------  Determines the position of a pattern within  string. ------@STRFIN(string,search_pattern,start_position)
+STRLEN  --------  Returns the length of the string.                     -----     @STRLEN('GoldenGate')
+STRLTRIM          Trims the leading spaces.                                    @STRLTRIM(FULL_NAME)
+STRRTRIM          Trims the training spaces.                             @STRRTRIM(FULL_NAME)
+STRSUB            Substitutes a pattern within a string.                 @STRSUB(String,pattern,replacement_string)
+STRTRIM            Trims both the leading and trailing spaces.           @STRTTRIM(FULL_NAME)
+STRUP             Converts a string to uppercase.                             @STRUP('employee')
+VALONEOF           Compares a string with a list. If matched, 1
+                  is returned; else 0.                                        @VALONEOF (STATUS, 'P', 'A', 'D')
+
+
+AFTER                   Returns an after image of the specifiedcolumns.             @AFTER(column_name)
+BEFORE                 Returns a before image of the specifiedcolumns. 
+                        This is to be used with theEXTRACT parameters 
+                        GETUPDATEBEFORES  and GETBEFORECOLS .                       @BEFORE(column_name)
+BEFOREAFTER              Returns a before image if available; if
+                        not, it returns an after image. This is to
+                         be used with the EXTRACT parameters
+                        GETUPDATEBEFORES and GETBEFORECOLS .                        @BEFOREAFTER(column_name)
+
+GETENV                  Returns information about the oldenGate environment.        @GETENV ('STATS','TABLE','schema_name.
+                                                                                    table_name','CDR_CONFLICTS')
+                                                                                    @GETENV ('STATS','TABLE','schema_name.
+                                                                                    table_name', 'CDR_RESOLUTIONS_FAILED')
+                                                                                    @GETENV ('STATS','CDR_RESOLUTIONS_
+                                                                                    SUCCEEDED')
+                                                                                    @GETENV ('STATS', 'TRUNCATE')
+                                                                                    @GETENV ('STATS', 'DML')
+                                                                                    @GETENV ('OSVARIABLE', 'variable')
+
+GETVAL             Extracts a value from a stored procedure                   MAP source_schema.table_name, TARGET
+                       or a query and passes it to the FILTER                   target_schema.table_name,
+                  and COLMAP attributes.                                       SQLEXEC (SPNAME dummy, PARAMS (var =dummy_col)),
+                                                                               COLMAP (target_col = @GETVAL (dummy.var));                                   
+
+
+
+Coomands
+---
+
+>Manager
+      INFO MANAGER
+      SEND MANAGER GETPORTINFO
+      SEND MANAGER CHILDSTATUS
+      SEND MANAGER CHILDSTATUS DEBUG
+      START MANAGER
+      STATUS MANAGER
+      STOP MANAGER!
+      
+      
+  ADD EXTRACT Creates an EXTRACT group.
+SOURCEISTABLE is used only when it is an
+initial load extract.
+ADD EXTRACT extract_name, TRANLOG,
+BEGIN NOW
+ADD EXTRACT extract_name,
+EXTFILESOURCE trail_name, BEGIN
+NOW
+ADD EXTRACT INITEXT, SOURCEISTABLE
+ADD REPLICAT Creates a REPLICAT group. SPECIALRUN
+is used only when it is an initial load
+replicat.
+ADD REPLICAT replicat_name,
+EXTTRAIL dirdat/aa
+ADD REPLICAT replicat_name,
+EXTTRAIL /app/ggs/tiger/dirdat/aa,
+NODBCHECKPOINT
+ADD REPLICAT INITREP, SPECIALRUN
+ALTER EXTRACT/
+REPLICAT
+Changes or assigns an attribute to an
+extract or replicat group.
+ALTER EXTRACT extract_name, BEGIN
+2014-01-01
+ALTER EXTRACT extract_name,
+ETROLLOVER
+ALTER EXTRACT extract_name,
+EXTSEQNO 06, EXTRBA 250311
+DELETE EXTRACT/
+REPLICAT
+D eletes an EXTRACT/REPLICAT group. D ELETE EXTRACT extract_name
+DELETE EXTRACT extract_name!
+CLEANUP EXTRACT/
+REPLICAT
+Deletes the run history on the specified
+EXTRACT/REPLICAT group.
+CLEANUP EXTRACT extract_name
+CLEANUP EXTRACT extract_name,5
+CLEANUP EXTRACT *
+INFO EXTRACT/
+REPLICAT
+Views various information related to the
+EXTRACT/REPLICAT .
+INFO EXTRACT extract_name
+INFO EXTRACT extract_name, DETAIL
+INFO EXTRACT extract_name, SHOWCH
+  
+  
+      
+      
+
+
+
