@@ -1781,12 +1781,12 @@ Coomands
 ---
 
 >Manager
-      INFO MANAGER
-      SEND MANAGER GETPORTINFO
-      SEND MANAGER CHILDSTATUS
-      SEND MANAGER CHILDSTATUS DEBUG
-      START MANAGER
-      STATUS MANAGER
+      INFO MANAGER \
+      SEND MANAGER GETPORTINFO\
+      SEND MANAGER CHILDSTATUS\
+      SEND MANAGER CHILDSTATUS DEBUG\
+      START MANAGER\
+      STATUS MANAGER\
       STOP MANAGER!
       
       
@@ -1825,9 +1825,167 @@ INFO EXTRACT/REPLICAT   Views various information related to the EXTRACT/REPLICA
                   INFO EXTRACT extract_name, DETAIL\
                   INFO EXTRACT extract_name, SHOWCH\
   
+KILL EXTRACT/REPLICAT   Kills an EXTRACT/REPLICAT when it can't be stopped gracefully.
+      KILL EXTRACT extract_name
+
+LAG EXTRACT/REPLICAT    Determines the exact lag time between the extract and the data source.
+      LAG EXTRACT extract_name
+
+SEND EXTRACT/REPLICAT  Sends commands to a running extract or replicat.
+      SEND EXTRACT extract_name, ROLLOVER
+      SEND EXTRACT extract_name, STOP
+      SEND EXTRACT extract_name, TRANLOGOPTIONS  TRANSCLEANUPFREQUENCY 10
+     SEND EXTRACT extract_name,SHOWTRANS COUNT 5
+
+START EXTRACT/ REPLICAT  Starts an extract. Optionally, ATCSN specifies an alternate start point.
+            START EXTRACT extact_name
+            START EXTRACT extract_name ATCSN 10005464
+            START EXTRACT extract_name AFTERCSN 10005464
+
+STATS EXTRACT/ REPLICAT  Displays statistics of one or more extract groups. Optionally, you can use statistics  TOTAL , HOURLY , DAILY , TABLE , and so on.
+
+            STATS EXTRACT extract_name
+            STATS EXTRACT extract_name,TOTAL, HOURLY, TABLE schema_name. 
+            table_name, REPORTRATE MIN, RESET,REPORTFETCH
+
+STOP EXTRACT/ REPLICAT Stops an extract gracefully. 
+            STOP EXTRACT extract_name 
+      
+Table 8-9. Oracle GoldenGate Wallet Commands
+---
+
+CREATE WALLET ---------\Creates a master-key wallet. It is used by GoldenGate processes to encrypt the encryption keys. 
+                        The wallet is created at the location specified by the GLOBALS parameter
+                        WALLETLOCATION if specified; otherwise, the default location is dirwlt .                     
+                        
+             ##CREATE WALLET
+
+OPEN WALLET          Opens the wallet to decrypt the content and load it into GGSCI memory. A wallet must be
+                     open before you can add or delete a master key.                                                 ##OPEN WALLET
+
+PURGE WALLET        Permanently removes the master-key versions that were marked for deletion by the
+                    DELETE MASTERKEY command.                                                                        ##PURGE WALLET
+
+
+ADD MASTERKEY           A master-key is used by GGSCI processes   (extracts and replicats) to secure the
+                        encryption keys being sent across the network.   -------                                  ADD MASTERKEY
+
+INFO MASTERKEY        Displays the contents of the currently open master-key wallet. It will display the version
+                      history of the master key.                                                                  INFO MASTERKEY
+                                                                                                                  INFO MASTERKEY VERSION 5
+
+RENEW MASTERKEY        Renews the master key to new version.                                                      RENEW MASTERKEY
+
+DELETE MASTERKEY       Marks the master key as deleted so it can’t be                                          DELETE MASTERKEY VERSION 2                                                  used any longer. This is later purged with the                                          DELETE MASTERKEY RANGE FROM 2 to 5    
+                        PURGE MASTERKEY command.                                                    
+
+UNDELETE MASTERKEY      Removes the deletion mark from a masterkey version.                                    UNDELETE MASTERKEY VERSION 3
+
+
+Table 8-10. GGSCI Commands for Trail Files
+------
+
+ADD EXTRAIL   ------------  Creates a trail on the local machine and assigns it to an extract group.
+
+                  ADD EXTTRAIL ggs/tiger/dirdat/ aa, EXTRACT extract_name, MEGABYTES 200
+                  ADD EXTTRAIL ggs/tiger/dirdat/aa
+
+ADD RMTTRAIL ------------  Creates a trail on the remote machine and assigns it to an extract group.
+
+                  ADD RMTTRAIL ggs/tiger/dirdat/bb, EXTRACT extract_name, MEGABYTES 200
+                  ADD RMTTRAIL ggs/tiger/dirdat/bb
+
+ALTER EXTRAIL Alters attributes of a trail created on the local machine.
+      
+      ADD EXTTRAIL ggs/tiger/dirdat/ aa, EXTRACT extract_name, MEGABYTES 200
+
+ALTER RMTTRAIL Alters attributes of a trail created on a remote machine.
+
+      ADD RMTTRAIL ggs/tiger/dirdat/bb, EXTRACT extract_name,MEGABYTES 200
+
+DELETE EXTRAIL -----  Deletes the checkpoints for the trail created on the local machine.checkpoints are stored in the dirchk  
+       
+            DELETE EXTTRAIL ggs/tiger/dirdat/aa
+
+DELETE RMTTRAIL ------ Deletes the checkpoints for the trail created on the remote machine.
+
+            DELETE RMTTRAIL ggs/tiger/dirdat/bb
+ 
+ INFO EXTRAIL ------ Displays information related to the localtrail such as the name of the trail,
+ 
+            INFO EXTRAIL trail_name
+ 
+ INFO RMTTRAIL Displays information related to the remote trail such as the name of the trail,
+ 
+              INFO RMTTRAIL trail_name
+              INFO RMTTRAIL *
+   
+   
+Table 8-11. GGSCI Commands for Parameter Files   
+---------
+
+EDIT PARAMS ----- Creates or changes a parameter file for a manager, extract, or replicat process.
+            EDIT PARAMS MGR
+            EDIT PARAMS extract_name
+
+SET EDITOR Changes the default text editor for the current GGSCI session
+            
+            SET EDITOR VIM
+            
+VIEW PARAMS --- Views the parameter file for a manager, extract, or replicat process
+          
+            VIEW PARAMS MGR
+            VIEW PARAMS extract_name
+            VIEW PARAMS replicat_name            
+
+              
+ Table 8-12. GGSCI Commands for Database
+ -----
+ 
+ DBLOGIN ----------- Logs in to the database from the GGSCI prompt to be able to issue GoldenGate commands that affect database.
+ 
+            DBLOGIN USERID tiger@ogg_demo, PASSWORD AACAAAAAAAAAAAJAUEUGODSCVGJEEIUGKJDJTFNDKEJFFFTCAES128, ENCRYPTKEY securekey1
+            DBLOGIN SOURCEDB ogg_demo USERIDALIAS tgr DOMAIN demo
+ 
+ DUMPDDL ------ Views all the records in the DDL history table. You will need to log in to the database using DBLOGIN to query the history table.
+                
+                  DUMPDDL
+                  DUMPDDL SHOW
+ 
+ ENCRYPT PASSWORD ----- Encrypts a password to be used in the extract or replicat parameter files.
+                        Available encryption keys are AES128 ,AES192 , AES256 , and BLOWFISH .
+            
+            ENCRYPT PASSWORD tiger_123 BLOWFISH
+            ENCRYPTKEY DEFAULT
+            ENCRYPT PASSWORD tiger_123 AES192
+            ENCRYPTKEY tgrsuperkey           
+
+ 
+ FLUSH SEQUENCE  --------- This is executed during initial synchronization when the extract is started for the first time.
+     
+     FLUSH SEQUENCE schema_name.sequence_name       
   
-      
-      
+LIST TABLES ---- Lists all tables in the database that matches the specified pattern.
+
+            LIST TABLES ACCOUNT* 
+            
+Table 8-13. GGSCI TRANDATA Commands
+----------
+
+
+
+            
+            
+  
+       
+       
+       
+
+
+ 
+ 
+
+
 
 
 
