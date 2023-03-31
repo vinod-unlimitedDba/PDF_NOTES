@@ -1790,14 +1790,15 @@ Coomands
       STOP MANAGER!
       
       
-  ADD EXTRACT     Creates an EXTRACT group.SOURCEISTABLE is used only            cmd--> ADD EXTRACT extract_name, TRANLOG, BEGIN NOW
-                  when it is an initial load extract.     
-                                                                                       ADD EXTRACT extract_name, EXTFILESOURCE trail_name, BEGIN NOW
-                                                                                        ADD EXTRACT INITEXT, SOURCEISTABLE
-ADD REPLICAT            Creates a REPLICAT group. SPECIALRUN
-                        is used only when it is an initial load replicat.      cmd ---> ADD REPLICAT replicat_name,EXTTRAIL dirdat/aa
-                                                                                        ADD REPLICAT replicat_name,EXTTRAIL /app/ggs/tiger/dirdat/aa, NODBCHECKPOINT
-                                                                                        ADD REPLICAT INITREP, SPECIALRUN
+ ADD EXTRACT     Creates an EXTRACT group.SOURCEISTABLE is used only  when it is an initial load extract. \          
+           cmd--> ADD EXTRACT extract_name, TRANLOG, BEGIN NOW\
+                  ADD EXTRACT extract_name, EXTFILESOURCE trail_name, BEGIN NOW\
+                  ADD EXTRACT INITEXT, SOURCEISTABLE
+
+ADD REPLICAT            Creates a REPLICAT group. SPECIALRUN is used only when it is an initial load replicat.      
+          cmd ---> ADD REPLICAT replicat_name,EXTTRAIL dirdat/aa
+                   ADD REPLICAT replicat_name,EXTTRAIL /app/ggs/tiger/dirdat/aa, NODBCHECKPOINT
+                   ADD REPLICAT INITREP, SPECIALRUN
 
 ALTER EXTRACT/REPLICAT   Changes or assigns an attribute to an
                         extract or replicat group.                       cmd--> ALTER EXTRACT extract_name, BEGIN 2014-01-01
