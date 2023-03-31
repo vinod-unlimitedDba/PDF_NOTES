@@ -1791,31 +1791,39 @@ Coomands
       
       
  ADD EXTRACT     Creates an EXTRACT group.SOURCEISTABLE is used only  when it is an initial load extract. \          
-           cmd--> ADD EXTRACT extract_name, TRANLOG, BEGIN NOW\
-                  ADD EXTRACT extract_name, EXTFILESOURCE trail_name, BEGIN NOW\
-                  ADD EXTRACT INITEXT, SOURCEISTABLE
+ 
+ cmd------------->      ADD EXTRACT extract_name, TRANLOG, BEGIN NOW\
+                        ADD EXTRACT extract_name, EXTFILESOURCE trail_name, BEGIN NOW\
+                        ADD EXTRACT INITEXT, SOURCEISTABLE\
 
 ADD REPLICAT            Creates a REPLICAT group. SPECIALRUN is used only when it is an initial load replicat.      
-          cmd ---> ADD REPLICAT replicat_name,EXTTRAIL dirdat/aa
-                   ADD REPLICAT replicat_name,EXTTRAIL /app/ggs/tiger/dirdat/aa, NODBCHECKPOINT
-                   ADD REPLICAT INITREP, SPECIALRUN
+  
+  cmd ----->       ADD REPLICAT replicat_name,EXTTRAIL dirdat/aa\
+                   ADD REPLICAT replicat_name,EXTTRAIL /app/ggs/tiger/dirdat/aa, NODBCHECKPOINT\
+                   ADD REPLICAT INITREP, SPECIALRUN\
 
-ALTER EXTRACT/REPLICAT   Changes or assigns an attribute to an
-                        extract or replicat group.                       cmd--> ALTER EXTRACT extract_name, BEGIN 2014-01-01
-                                                                                ALTER EXTRACT extract_name, ETROLLOVER
-                                                                                ALTER EXTRACT extract_name, EXTSEQNO 06, EXTRBA 250311
+ALTER EXTRACT/REPLICAT   Changes or assigns an attribute to an extract or replicat group.
+  
+  cmd--> ALTER EXTRACT extract_name, BEGIN 2014-01-01\
+          ALTER EXTRACT extract_name, ETROLLOVER\
+          ALTER EXTRACT extract_name, EXTSEQNO 06, EXTRBA 250311\
 
-DELETE EXTRACT/REPLICAT   Deletes an EXTRACT/REPLICAT group.                  DELETE EXTRACT extract_name
-                                                                              DELETE EXTRACT extract_name!
+DELETE EXTRACT/REPLICAT   Deletes an EXTRACT/REPLICAT group.                  
+
+      DELETE EXTRACT extract_name                                                                            
+      DELETE EXTRACT extract_name
 
 CLEANUP EXTRACT/REPLICAT   Deletes the run history on the specified
-                            EXTRACT/REPLICAT group.                           CLEANUP EXTRACT extract_name 
-                                                                              CLEANUP EXTRACT extract_name,5
-                                                                              CLEANUP EXTRACT *
-INFO EXTRACT/REPLICAT   Views various information related to the
-                        EXTRACT/REPLICAT .                                    INFO EXTRACT extract_name
-                                                                              INFO EXTRACT extract_name, DETAIL
-                                                                              INFO EXTRACT extract_name, SHOWCH
+                
+                CLEANUP EXTRACT extract_name\ 
+               CLEANUP EXTRACT extract_name,5\
+                CLEANUP EXTRACT *\
+
+INFO EXTRACT/REPLICAT   Views various information related to the EXTRACT/REPLICAT .                                   
+                  
+                  INFO EXTRACT extract_name\
+                  INFO EXTRACT extract_name, DETAIL\
+                  INFO EXTRACT extract_name, SHOWCH\
   
   
       
