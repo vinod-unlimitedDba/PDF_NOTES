@@ -17,3 +17,20 @@ aws ec2 run-instances --image-id ami-0d81306eddc614a45
 --key-name keypair 
 --user-data file://file_user_data.txt 
 ```
+
+VPC creaion command
+```
+aws ec2 create-vpc 
+--region  ap-south-1 
+--cidr-block 10.0.0.0/16
+--tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=my-vpc}]'
+```
+
+
+```
+aws ec2 create-subnet 
+--region ap-south-1 
+--vpc-id vpc-0e5a772b4d5042d29 
+--cidr-block 10.0.1.0/24 
+--tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=my-subnet},{Key=env,Value=DB}]'
+```
