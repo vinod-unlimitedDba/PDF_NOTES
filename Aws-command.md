@@ -18,7 +18,7 @@ aws ec2 run-instances --image-id ami-0d81306eddc614a45
 --user-data file://file_user_data.txt 
 ```
 
-VPC creaion command
+VPC creation command
 ```
 aws ec2 create-vpc 
 --region  ap-south-1 
@@ -26,7 +26,7 @@ aws ec2 create-vpc
 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=my-vpc}]'
 ```
 
-
+subnet
 ```
 aws ec2 create-subnet 
 --region ap-south-1 
