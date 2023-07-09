@@ -34,3 +34,18 @@ aws ec2 create-subnet
 --cidr-block 10.0.1.0/24 
 --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=my-subnet},{Key=env,Value=DB}]'
 ```
+
+ElB
+-----------
+
+
+aws elbv2 create-load-balancer --name my-load-balancer --type application --subnets subnet-12345678 subnet-87654321 --security-groups sg-12345678 --region us-west-2
+
+aws elbv2 create-target-group --name my-target-group --protocol HTTP --port 80 --vpc-id vpc-12345678 --region us-west-2
+
+aws elbv2 register-targets --target-group-arn arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890abcdef --targets Id=i-0123456789abcdef0 Id=i-9876543210fedcba0 --region us-west-2
+
+aws elbv2 create-listener --load-balancer-arn arn:aws:elasticloadbalancing:us-west-2:123456789012:loadbalancer/app/my-load-balancer/1234567890abcdef --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890abcdef --region us-west-2
+
+
+
