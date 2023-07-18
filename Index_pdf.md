@@ -3,8 +3,7 @@
 # Expert Oracle Indexing and Access Paths
 ------------------------------------------
 <details> 
-<summary>CHAPTER 1 Introduction to Oracle Indexes </summary>
------------------
+<summary> CHAPTER 1 Introduction to Oracle Indexes </summary>
  
 An index is a combination of a value and an associated location that allows you to quickly locate an object. We probably often use index structures to navigate throughout the day, such as:
          • Browsing a catalog menu to efficiently find a desired item
