@@ -2,8 +2,8 @@
 
 # Expert Oracle Indexing and Access Paths
 ------------------------------------------
- 
-##### CHAPTER 1 Introduction to Oracle Indexes 
+<details> 
+<summary>CHAPTER 1 Introduction to Oracle Indexes </summary>
 -----------------
  
 An index is a combination of a value and an associated location that allows you to quickly locate an object. We probably often use index structures to navigate throughout the day, such as:
@@ -311,7 +311,7 @@ judiciously. Test first to determine quantifiable                      indexes u
 |you drop the index.
 |				 
 				
-
+</details>
 
 
 
