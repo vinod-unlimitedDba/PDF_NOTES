@@ -75,7 +75,8 @@ x = None  ---->print(x)                     # Output: None
 
 0 = x                    => Output: SyntaxError: can't assign to literal
 
-Rules for variable naming:
+Rules for variable naming:\
+    
      1. Variables names must start with a letter or an underscore.
              x = True # valid
             _y = True # valid
