@@ -60,7 +60,7 @@ There are multiple ways to close the Python shell:
 </summary>
 
 # Integer
-a = 2 -----> print(a)                        #   Output: 2
+a = 2 -----> print(a)                        #   Output: 2\
 b = 9223372036854775807 ----> print(b)       # Output: 9223372036854775807
 # Floating point
 pi = 3.14  ------>  print(pi)                # Output: 3.14
@@ -100,7 +100,64 @@ the Python interpreter automatically picks the most suitable built-in type for i
                 name = 'John Doe'        =====> print(type(name))        # Output: <type 'str'>
                 q = True                 ====>print(type(q))             # Output: <type 'bool'>
                 x = None                ====> print(type(x))             # Output: <type 'NoneType'>
-             
+
+                
+You can assign multiple values to multiple variables in one line. Note that there must be the same number of
+arguments on the right and left sides of the = operator:
+
+            a, b, c = 1, 2, 3 ======> print(a, b, c)       # Output: 1 2 3
+            a, b, c = 1, 2 ====> Traceback (most recent call last): => File "name.py", line N, in <module>
+            => a, b, c = 1, 2 ===> ValueError: need more than 2 values to unpack
+            a, b = 1, 2, 3 ====> Traceback (most recent call last): => File "name.py", line N, in <module>
+            => a, b = 1, 2, 3 ===> ValueError: too many values to unpack
+
+
+The error in last example can be obviated by assigning remaining values to equal number of arbitrary variables.
+This dummy variable can have any name, but it is conventional to use the underscore (_) for assigning unwanted values:
+    a, b, _ = 1, 2, 3 ===>print(a, b)     # Output: 1, 2
+
+Note that the number of _ and number of remaining values must be equal. Otherwise 'too many values to unpack
+error' is thrown as above:
+    a, b, _ = 1,2,3,4 ===>Traceback (most recent call last): ===>File "name.py", line N, in <module>
+    a, b, _ = 1,2,3,4  ===>ValueError: too many values to unpack (expected 3)           
+
+sometime we can assign several variables simultaneously with single value
+
+            a = b = c = 1 ====> print(a, b, c) # Output: 1 1 1
+            a = b = c = 1 # all three names a, b and c refer to same int object with value 1
+            print(a, b, c) # Output: 1 1 1
+                b = 2 # b now refers to another int object, one with a value of 2
+            print(a, b, c)   # Output: 1 2 1 # so output is as expected.
+
+The above is also true for mutable types (like list, dict, etc.) just as it is true for immutable types (like int, string,
+tuple, etc.):
+
+        x = y = [7, 8, 9] # x and y refer to the same list object just created, [7, 8, 9]
+        x = [13, 8, 9] # x now refers to a different list object just created, [13, 8, 9]
+        print(y) # y still refers to the list it was first assigned
+        # Output: [7, 8, 9]
+
+Things are a bit different when it comes to modifying the object (in contrast to assigning the name to
+a different object, which we did above) when the cascading assignment is used for mutable types.
+
+        x = y = [7, 8, 9] # x and y are two different names for the same list object just created, [7,8, 9]
+        x[0] = 13 # we are updating the value of the list [7, 8, 9] through one of its names, x in this case
+        print(y) # printing the value of the list using its other name
+         # Output: [13, 8, 9] # hence, naturally the change is reflected
+
+Nested lists are also valid in python. This means that a list can contain another list as an element.
+
+        x = [1, 2, [3, 4, 5], 6, 7] # this is nested list
+        print x[2] # Output: [3, 4, 5]
+        print x[2][1] # Output: 4
+
+Lastly, variables in Python do not have to stay the same type as which they were first defined -- you can simply use
+= to assign a new value to a variable, even if that value is of a different type.
+
+        a = 2 print(a) # Output: 2
+        a = "New value" print(a) # Output: New value
+
+
 
 
 </summary>
