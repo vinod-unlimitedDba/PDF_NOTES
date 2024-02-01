@@ -60,20 +60,20 @@ There are multiple ways to close the Python shell:
 </summary>
 
 # Integer
-a = 2 -----> print(a)                        #   Output: 2\
-b = 9223372036854775807 ----> print(b)       # Output: 9223372036854775807
+    a = 2 -----> print(a)                        #   Output: 2\
+    b = 9223372036854775807 ----> print(b)       # Output: 9223372036854775807
 # Floating point
-pi = 3.14  ------>  print(pi)                # Output: 3.14
+    pi = 3.14  ------>  print(pi)                # Output: 3.14
 # String
-c = 'A' ----> print(c)                       # Output: A
+    c = 'A' ----> print(c)                       # Output: A
 # String
-name = 'John Doe'  --->print(name)          # Output: John Doe
+    name = 'John Doe'  --->print(name)          # Output: John Doe
 # Boolean
-q = True --->  print(q)                     # Output: True
+    q = True --->  print(q)                     # Output: True
 # Empty value or null data type
-x = None  ---->print(x)                     # Output: None
+    x = None  ---->print(x)                     # Output: None
 
-0 = x                    => Output: SyntaxError: can't assign to literal
+    0 = x                    => Output: SyntaxError: can't assign to literal
 
 Rules for variable naming:\
     
@@ -158,7 +158,15 @@ Lastly, variables in Python do not have to stay the same type as which they were
         a = "New value" print(a) # Output: New value
 
 
+<details> 
+<summary> Section 1.3: Block Indentation 
+</summary>
 
+
+
+<details> 
+<summary> CHAPTER 1 Get started 
+</summary>
 
 </summary>
 
