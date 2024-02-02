@@ -284,8 +284,8 @@ Python 2.x Version ≤ 2.7
 
 
 
+</details>
 
-</summary>
 
 
 
