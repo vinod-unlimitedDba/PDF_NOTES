@@ -1,12 +1,10 @@
-<details> 
-<summary> cassandra pdf
-</summary> 
+
   
 <details> 
-<summary> CHAPTER 1 Introduction of cassandra
-</summary> 
+<summary> CHAPTER 1 Introduction of cassandra </summary>
+</details> 
+
 
 <details> 
 <summary> CHAPTER 2 Security of cassandra </summary>
-</summary>
 
