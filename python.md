@@ -1,6 +1,8 @@
 <details> 
 <summary> CHAPTER 1 Get started </summary>
 
+<details> 
+<summary> 1.1 Introduction</summary>
 ===>  Python is a widely used high-level programming language for general-purpose programming, created by Guido van
 Rossum and first released in 1991.
 
@@ -50,12 +52,11 @@ $ python -i hello.py
 
 There are multiple ways to close the Python shell:
 >>> exit() or >>> quit() -- ctrl+D --- ctrl+c
+</details>
 
 <details> 
-<summary> ##Section 1.2: Creating variables and assigning values 
-</summary>
-
-
+<summary> Section 1.2: Creating variables and assigning values </summary>
+ 
 ### Integer
     a = 2 -----> print(a)                        #   Output: 2\
     b = 9223372036854775807 ----> print(b)       # Output: 9223372036854775807
@@ -155,7 +156,7 @@ Lastly, variables in Python do not have to stay the same type as which they were
 
         a = 2 print(a) # Output: 2
         a = "New value" print(a) # Output: New value
-
+</details>
 
 <details> 
 <summary> Section 1.3: Block Indentation  </summary>
@@ -205,6 +206,7 @@ Python 3 disallows mixing the use of tabs and spaces for indentation. In such ca
 generated: Inconsistent use of tabs and spaces in indentation and the program will not run.
 
 Python 2.x Version ≤ 2.7
+</details>
 
 <details> 
 <summary> Section 1.4: Datatypes </summary>
@@ -268,24 +270,23 @@ Python 2.x Version ≤ 2.7
 
 >An object is hashable if it has a hash value which never changes during its lifetime (it needs a __hash__()
 >method), and can be compared to other objects (it needs an __eq__() method).
-                     
-
+ </details>                    
 <details> 
 <summary> Section 1.4: Datatypes </summary>
-
+</details>
 <details> 
 <summary> Section 1.4: Datatypes </summary>
-
+</details>
 <details> 
 <summary> Section 1.4: Datatypes </summary>
-
+</details>
 <details> 
 <summary> Section 1.4: Datatypes </summary>
-
+</details>
 
 
 </details>
 
-
-
-
+<details> 
+<summary> chapter:2</summary>
+</details>
