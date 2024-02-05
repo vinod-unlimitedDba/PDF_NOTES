@@ -355,6 +355,8 @@ Data types whose instances are mutable are called mutable data types, and simila
 <details> 
 <summary> Section 1.5: Collection Types </summary>
 
+\
+\
 A number of collection types in Python. While types such as int and str hold a single value, collection
 types hold multiple values.
 
