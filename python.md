@@ -427,12 +427,127 @@ a.reverse() ==========  [4, 3, 2, 1, 1, 1] # ''or'' a[::-1] =====>   [4, 3, 2, 1
 Remove and return item at index (defaults to the last item) with L.pop([index]), returns the item
 names.pop() # Outputs 'Sia'
 
-     
+Tuples
+---------
+\
+A tuple is similar to a list except that it is fixed-length and immutable. So the values in the tuple cannot be changed
+nor the values be added to or removed from the tuple
+
+Tuples are commonly used for small collections of values that will not need to change, such as an IP address and port. Tuples are represented with parentheses instead of square brackets:
+
+     ip_address = ('10.20.30.40', 8080)
+
+same indexing rules for lists also apply to tuples. Tuples can also be nested and the values can be any valid Python valid.
+
+A tuple with only one member must be defined (note the comma) this way:
+   one_member_tuple = ('Only member',)
+        or
+   one_member_tuple = 'Only member',
+
+Dictionaries
+----------------------------------
+
+A dictionary in Python is a collection of key-value pairs. The dictionary is surrounded by curly braces. Each pair is
+separated by a comma and the key and value are separated by a colon. Here is an example:
+
+
+state_capitals = {
+                   'Arkansas': 'Little Rock',
+                    'Colorado': 'Denver',
+                    'California': 'Sacramento',
+                    'Georgia': 'Atlanta'
+                 }
+
+To get a value, refer to it by its key:
+ 
+    ca_capital = state_capitals['California']
+
+set
+
+A set is a collection of elements with no repeats and without insertion order but sorted order. They are used in
+situations where it is only important that some things are grouped together, and not what order they were included.
+
+For large groups of data, it is much faster to check whether or not an element is in a set than it is to do
+the same for a list.
+
+a set is very similar to defining a dictionary:
+       
+       first_names = {'Adam', 'Beth', 'Charlie'}
+
+
+Or you can build a set using an existing list:
+   
+    my_list = [1,2,3]
+    my_set = set(my_list)
+
+defaultdict
+--------------
+
+A defaultdict is a dictionary with a default value for keys, so that keys for which no value has been explicitly
+defined can be accessed without errors. defaultdict is especially useful when the values in the dictionary are
+collections (lists, dicts, etc) i
+
+A defaultdict will never raise a KeyError. Any key that does not exist gets the default value returned.
+For example, consider the following dictionary
+>>> state_capitals = {
+                      'Arkansas': 'Little Rock',
+                      'Colorado': 'Denver',
+                      'California': 'Sacramento',
+                      'Georgia': 'Atlanta'
+                      }
+
+
+If we try to access a non-existent key, python returns us an error as follows
+>>> state_capitals['Alabama']
+Traceback (most recent call last):
+File "<ipython-input-61-236329695e6f>", line 1, in <module>
+state_capitals['Alabama']
+KeyError: 'Alabama
+
+What we did here is to set a default value (Boston) in case the give key does not exist. Now populate the dict as
+before:
+>>> state_capitals['Arkansas'] = 'Little Rock'
+>>> state_capitals['California'] = 'Sacramento'
+>>> state_capitals['Colorado'] = 'Denver'
+>>> state_capitals['Georgia'] = 'Atlanta'
+
+
+    
 
 </details>     
 
 <details> 
-<summary> Section 1.4: Datatypes </summary>
+<summary> Section 1.11: String function - str() and repr() </summary>
+
+Two functions that can be used to obtain a readable representation of an object.
+
+repr(x) calls x.__repr__(): a representation of x. eval will usually convert the result of this function back to the
+original object.
+str(x) calls x.__str__(): a human-readable string that describes the object. This may elide some technical detail.
+
+This function makes an attempt to return a string that would yield an object with the same value
+when passed to eval().
+
+str()
+For strings, this returns the string itself. The difference between this and repr(object) is that str(object) does
+not always attempt to return a string that is acceptable to eval().
+
+Example 1:
+     s = """w'o"w"""
+     repr(s) # Output: '\'w\\\'o"w\''
+     str(s) # Output: 'w\'o"w'
+     eval(str(s)) == s # Gives a SyntaxError
+     eval(repr(s)) == s # Output: True
+     
+ Example 2:
+
+          import datetime
+          today = datetime.datetime.now()
+          str(today) # Output: '2016-09-15 06:58:46.915000'
+          repr(today) # Output: 'datetime.datetime(2016, 9, 15, 6, 58, 46, 915000)'
+
+
+          
 </details>
 <details> 
 <summary> Section 1.4: Datatypes </summary>
